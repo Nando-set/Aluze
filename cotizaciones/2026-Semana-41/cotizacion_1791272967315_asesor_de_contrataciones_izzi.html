@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotización - Asesor de contrataciones izzi | Aluze</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #0f172a; color: #334155; margin: 0; padding: 20px;
+         display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .card { background: #fff; width: 100%; max-width: 440px; padding: 30px;
+           border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+  .header-brand { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+  .logo-container svg { max-width: 150px; height: auto; display: block; margin: 0 auto 8px; }
+  .tagline { font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #64748b; font-weight: 600; }
+  .card-title { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #973359; font-weight: 700; margin: 0 0 20px; text-align: center; }
+  .section { margin-bottom: 18px; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }
+  .value-row { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; gap: 10px; }
+  .value { font-size: 15px; color: #1e293b; font-weight: 500; word-break: break-word; }
+  .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .btn-action { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer; border: none; }
+  .btn-call { color: #973359; background: #fdf2f8; border: 1px solid #fbcfe8; }
+  .btn-wa { color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; }
+  .btn-copy { color: #475569; background: #e2e8f0; font-size: 12px; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
+  .btn-copy:hover { background: #cbd5e1; }
+  .map-link { display: inline-flex; align-items: center; gap: 5px; color: #831843; background: #fdf2f8; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none; margin-top: 6px; border: 1px solid #fbcfe8; }
+  .box { background: #f8fafc; border-left: 4px solid #973359; padding: 14px; border-radius: 6px; margin-top: 6px; white-space: pre-line; font-size: 14px; color: #334155; line-height: 1.4; }
+  .price-box { background: #fdf2f8; border: 1px dashed #973359; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; }
+  .price-label { font-size: 11px; text-transform: uppercase; color: #831843; font-weight: 600; }
+  .price-value { font-size: 20px; font-weight: 800; color: #973359; margin-top: 2px; }
+  .btn-universal-copy { width: 100%; background: #1e293b; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+  .btn-universal-copy:hover { background: #334155; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; }
+  .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header-brand">
+    <div class="logo-container"><?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 594 316">
+  <g id="Capa_1-2" data-name="Capa 1">
+    <image xlink:href="E:\Descarga\soul\Escritorio\ALUZE\352c137c-9bc7-41ff-9582-406b40e580b3.png"/>
+  </g>
+</svg></div>
+    <div class="tagline">Persianas &amp; Decoración</div>
+  </div>
+  <div class="card-title">Tarjeta de Cotización</div>
+
+  <div class="section">
+    <div class="label">Cliente</div>
+    <div class="value-row"><span class="value" id="val-cliente">Asesor de contrataciones izzi</span></div>
+  </div>
+  <div class="section">
+    <div class="label">Concepto / Sistema</div>
+    <div class="value-row"><span class="value" id="val-concepto">4 ventanas</span></div>
+  </div>
+  <div class="section">
+    <div class="label">Teléfono y Contacto</div>
+    <div class="value-row">
+      <span class="value" id="val-tel">5541793122</span>
+      <button class="btn-action btn-copy" onclick="copiarTexto('val-tel','¡Teléfono copiado!')">📋 Copiar</button>
+    </div>
+    <div class="actions-row">
+      <a class="btn-action btn-call" href="tel:5541793122">📞 Llamar</a>
+      <a class="btn-action btn-wa" href="https://wa.me/5541793122" target="_blank">💬 WhatsApp</a>
+    </div>
+  </div>
+  <div class="section">
+    <div class="label">Domicilio</div>
+    <div class="value-row" style="align-items:flex-start;">
+      <span class="value" id="val-dom">https://maps.app.goo.gl/Tcr2WaTWvCLaVS5o9</span>
+      <button class="btn-action btn-copy" onclick="copiarTexto('val-dom','¡Domicilio copiado!')">📋 Copiar</button>
+    </div>
+    <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=https%3A//maps.app.goo.gl/Tcr2WaTWvCLaVS5o9" target="_blank">📍 Abrir ubicación en Google Maps</a>
+  </div>
+  <div class="section">
+    <div class="label">Detalles de la Cotización</div>
+    <div class="box" id="val-detalles"></div>
+  </div>
+  <div class="section">
+    <div class="label">Notas / Observaciones</div>
+    <div class="box" id="val-notas" style="border-left-color:#d97706;">Cotizacion Martes de 9am a 2PM
+Me marcan por Whatsapp 
+La cliente dice que no hay señal
+&quot;Es un coto cerrado 
+Pitan cuando lleguen&quot;</div>
+  </div>
+  <div class="price-box">
+    <div class="price-label">Monto Aproximado</div>
+    <div class="price-value" id="val-monto"></div>
+  </div>
+  <button class="btn-universal-copy" onclick="copiarTodo()">📋 Copiar toda la información para chat</button>
+  <div class="footer">Generado el 06/10/2026 03:49 | Persianas Aluze</div>
+</div>
+<div id="toast" class="toast">¡Copiado!</div>
+<script>
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2000);
+}
+function copiarTexto(id, msg) {
+  const texto = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(texto).then(() => mostrarToast(msg));
+}
+function copiarTodo() {
+  const g = id => document.getElementById(id).innerText;
+  let txt = `*COTIZACIÓN ALUZE*\n`;
+  txt += `👤 *Cliente:* ${g('val-cliente')}\n`;
+  txt += `📦 *Concepto:* ${g('val-concepto')}\n`;
+  txt += `📞 *Teléfono:* ${g('val-tel')}\n`;
+  txt += `📍 *Domicilio:* ${g('val-dom')}\n`;
+  txt += `📋 *Detalles:*\n${g('val-detalles')}\n`;
+  const notas = g('val-notas').trim();
+  if (notas) txt += `📝 *Notas:*\n${notas}\n`;
+  txt += `💰 *Monto:* ${g('val-monto')}`;
+  navigator.clipboard.writeText(txt).then(() => mostrarToast('¡Copiado!'));
+}
+</script>
+</body>
+</html>
