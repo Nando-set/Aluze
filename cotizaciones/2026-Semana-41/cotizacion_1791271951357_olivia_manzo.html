@@ -33,6 +33,42 @@
   .price-value { font-size: 20px; font-weight: 800; color: #973359; margin-top: 2px; }
   .btn-universal-copy { width: 100%; background: #1e293b; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }
   .btn-universal-copy:hover { background: #334155; }
+
+  /* BOTONES DE COMPARTIR */
+  .share-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #f1f5f9;
+  }
+  .btn-share {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-share:hover { opacity: 0.88; }
+  .btn-share:active { transform: scale(0.98); }
+  .btn-copy-link {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+  }
+  .btn-whatsapp {
+    background: #25d366;
+    color: #fff;
+  }
+
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; }
   .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; }
 </style>
@@ -87,19 +123,53 @@ B 2m x 2m</div>
     <div class="price-value" id="val-monto">$5,800 MXN</div>
   </div>
   <button class="btn-universal-copy" onclick="copiarTodo()">📋 Copiar toda la información para chat</button>
+
+  <div class="share-buttons">
+    <button class="btn-share btn-copy-link" onclick="copiarEnlace()">
+      📋 Copiar enlace
+    </button>
+    <a class="btn-share btn-whatsapp" id="btn-whatsapp-share" href="#" target="_blank">
+      💬 Compartir por WhatsApp
+    </a>
+  </div>
+
   <div class="footer">Generado el 06/10/2026 03:32 | Persianas Aluze</div>
 </div>
 <div id="toast" class="toast">¡Copiado!</div>
 <script>
+// URL de fallback (GitHub Pages) por si se abre localmente
+const URL_FALLBACK = "https://nando-set.github.io/Aluze/cotizaciones/2026-Semana-41/cotizacion_1791271951357_olivia_manzo.html";
+
+function obtenerUrl() {
+  // Si estamos en la web, usar la URL actual
+  if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+    return window.location.href;
+  }
+  // Si se abre localmente (file://), usar el fallback
+  return URL_FALLBACK;
+}
+
 function mostrarToast(msg) {
   const t = document.getElementById('toast');
   t.innerText = msg; t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 2000);
 }
+
 function copiarTexto(id, msg) {
   const texto = document.getElementById(id).innerText;
   navigator.clipboard.writeText(texto).then(() => mostrarToast(msg));
 }
+
+function copiarEnlace() {
+  const url = obtenerUrl();
+  navigator.clipboard.writeText(url).then(() => {
+    mostrarToast('¡Enlace copiado al portapapeles!');
+  }).catch(err => {
+    console.error('Error al copiar: ', err);
+    mostrarToast('No se pudo copiar el enlace');
+  });
+}
+
 function copiarTodo() {
   const g = id => document.getElementById(id).innerText;
   let txt = `*COTIZACIÓN ALUZE*\n`;
@@ -113,6 +183,15 @@ function copiarTodo() {
   txt += `💰 *Monto:* ${g('val-monto')}`;
   navigator.clipboard.writeText(txt).then(() => mostrarToast('¡Copiado!'));
 }
+
+// Configurar botón de WhatsApp al cargar
+document.addEventListener('DOMContentLoaded', () => {
+  const url = obtenerUrl();
+  const mensaje = encodeURIComponent(
+    `Hola, aquí está tu cotización de Persianas Aluze:\n\n${url}\n\nCualquier duda, quedo atento.`
+  );
+  document.getElementById('btn-whatsapp-share').href = `https://wa.me/?text=${mensaje}`;
+});
 </script>
 </body>
 </html>
