@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 # ============================================================
-# CONFIGURACIÓN (EDITA SOLO ESTAS 2 LÍNEAS SI CAMBIA ALGO)
+# CONFIGURACIÓN (EDITA SOLO ESTAS 3 LÍNEAS SI CAMBIA ALGO)
 # ============================================================
 GITHUB_USER = "Nando-set"
 GITHUB_REPO = "Aluze"
@@ -233,7 +233,7 @@ function copiarTodo() {{
 
 
 # ============================================================
-# GENERAR INDEX.HTML (panel del jefe, tarjetas clicables)
+# GENERAR INDEX.HTML (panel con filtros y contador)
 # ============================================================
 def regenerar_index():
     if not DB_FILE.exists():
@@ -244,6 +244,7 @@ def regenerar_index():
         next(reader, None)
         registros = [r for r in reader if len(r) >= 9]
 
+    # Semanas ISO
     semanas = {}
     for reg in registros:
         try:
@@ -254,6 +255,18 @@ def regenerar_index():
         clave = f"{year}-Semana-{week:02d}"
         semanas.setdefault(clave, {"lunes": lunes, "domingo": domingo, "registros": []})["registros"].append(reg)
 
+    # Métricas globales
+    total = len(registros)
+    _, _, lunes_actual, domingo_actual = obtener_semana_iso()
+    esta_semana = 0
+    for reg in registros:
+        try:
+            fecha_dt = datetime.strptime(reg[1], "%d/%m/%Y %H:%M")
+        except Exception:
+            continue
+        if lunes_actual <= fecha_dt <= (domingo_actual.replace(hour=23, minute=59, second=59)):
+            esta_semana += 1
+
     logo_html = obtener_logo_svg_inline()
     bloques = []
 
@@ -261,6 +274,16 @@ def regenerar_index():
         info = semanas[clave]
         lunes = info["lunes"].strftime("%d/%m/%Y")
         domingo = info["domingo"].strftime("%d/%m/%Y")
+        cantidad = len(info["registros"])
+
+        # Semana actual vs antigua
+        year_actual, week_actual, _, _ = obtener_semana_iso()
+        es_actual = clave == f"{year_actual}-Semana-{week_actual:02d}"
+        clase_semana = "semana semana-actual" if es_actual else "semana"
+
+        # Fecha de la semana para filtro por mes (YYYY-MM)
+        mes_clave = info["lunes"].strftime("%Y-%m")
+
         tarjetas = []
         for reg in reversed(info["registros"]):
             id_reg, fecha, cliente, domicilio, telefono, concepto, cotizacion, monto, notas = reg[:9]
@@ -282,11 +305,14 @@ def regenerar_index():
               {nota_html}
               <div class="cot-cta">🔗 Ver cotización completa →</div>
             </a>""")
+
         bloques.append(f"""
-        <section class="semana">
-          <h2>📅 {clave} <span class="rango">({lunes} → {domingo})</span></h2>
+        <section class="{clase_semana}" data-semana="{clave}" data-mes="{mes_clave}">
+          <h2>📅 {clave} <span class="rango">({lunes} → {domingo})</span> <span class="badge">{cantidad} cotización{"es" if cantidad != 1 else ""}</span></h2>
           <div class="grid">{''.join(tarjetas)}</div>
         </section>""")
+
+    mes_actual = datetime.now().strftime("%Y-%m")
 
     contenido = f"""<!DOCTYPE html>
 <html lang="es">
@@ -297,16 +323,31 @@ def regenerar_index():
 <style>
   * {{ box-sizing: border-box; }}
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }}
-  .header {{ text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #1e293b; }}
+  .header {{ text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #1e293b; }}
   .header svg {{ max-width: 180px; height: auto; }}
   .header h1 {{ font-size: 22px; margin: 12px 0 4px; color: #f8fafc; }}
   .header p {{ color: #94a3b8; font-size: 13px; margin: 0; }}
-  .buscador {{ max-width: 500px; margin: 0 auto 30px; }}
+  .contador {{ display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }}
+  .contador .stat {{ background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px 18px; }}
+  .contador .num {{ font-size: 22px; font-weight: 800; color: #f8fafc; display: block; }}
+  .contador .lbl {{ font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; }}
+  .contador .stat.destacado .num {{ color: #34d399; }}
+
+  .controles {{ max-width: 640px; margin: 24px auto 30px; }}
   .buscador input {{ width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 15px; outline: none; }}
   .buscador input:focus {{ border-color: #973359; }}
+  .filtros {{ display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }}
+  .filtros button {{ padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #cbd5e1; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }}
+  .filtros button:hover {{ border-color: #973359; color: #f8fafc; }}
+  .filtros button.activo {{ background: #973359; border-color: #973359; color: #fff; }}
+
   .semana {{ margin-bottom: 30px; }}
-  .semana h2 {{ font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 14px; }}
+  .semana h2 {{ font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }}
+  .semana-actual h2 {{ border-left-color: #34d399; }}
   .rango {{ font-size: 12px; color: #94a3b8; font-weight: 400; }}
+  .badge {{ background: #334155; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; }}
+  .semana-actual .badge {{ background: #064e3b; color: #6ee7b7; }}
+
   .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }}
   .cot-card {{ display: block; text-decoration: none; background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; transition: transform 0.15s, border-color 0.15s; color: inherit; cursor: pointer; }}
   .cot-card:hover {{ transform: translateY(-3px); border-color: #973359; box-shadow: 0 6px 20px rgba(151,51,89,0.2); }}
@@ -325,23 +366,62 @@ def regenerar_index():
     {logo_html}
     <h1>Panel de Cotizaciones</h1>
     <p>Persianas &amp; Decoración · Actualizado el {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+    <div class="contador">
+      <div class="stat"><span class="num">{total}</span><span class="lbl">Total</span></div>
+      <div class="stat destacado"><span class="num">{esta_semana}</span><span class="lbl">Esta semana</span></div>
+      <div class="stat"><span class="num">{len(semanas)}</span><span class="lbl">Semanas</span></div>
+    </div>
   </div>
-  <div class="buscador">
-    <input type="text" id="buscador" placeholder="🔍 Buscar por cliente, concepto o teléfono..." oninput="filtrar()">
+
+  <div class="controles">
+    <div class="buscador">
+      <input type="text" id="buscador" placeholder="🔍 Buscar por cliente, concepto o teléfono..." oninput="aplicarFiltros()">
+    </div>
+    <div class="filtros">
+      <button class="activo" data-filtro="todas" onclick="setFiltro('todas', this)">📋 Todas</button>
+      <button data-filtro="semana" onclick="setFiltro('semana', this)">📅 Esta semana</button>
+      <button data-filtro="mes" onclick="setFiltro('mes', this)">🗓️ Este mes</button>
+    </div>
   </div>
+
   <div id="contenido">
     {''.join(bloques) if bloques else '<div class="vacio">No hay cotizaciones registradas aún.</div>'}
   </div>
   <footer>Persianas Aluze · Generado automáticamente</footer>
+
   <script>
-    function filtrar() {{
+    const SEMANA_ACTUAL = "{datetime.now().isocalendar()[0]}-Semana-{datetime.now().isocalendar()[1]:02d}";
+    const MES_ACTUAL = "{mes_actual}";
+    let filtroActual = "todas";
+
+    function setFiltro(filtro, boton) {{
+      filtroActual = filtro;
+      document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('activo'));
+      boton.classList.add('activo');
+      aplicarFiltros();
+    }}
+
+    function aplicarFiltros() {{
       const q = document.getElementById('buscador').value.toLowerCase();
-      document.querySelectorAll('.cot-card').forEach(card => {{
-        card.style.display = card.innerText.toLowerCase().includes(q) ? '' : 'none';
-      }});
+
       document.querySelectorAll('.semana').forEach(sec => {{
-        const visibles = sec.querySelectorAll('.cot-card:not([style*="display: none"])').length;
-        sec.style.display = visibles > 0 ? '' : 'none';
+        const semana = sec.dataset.semana;
+        const mes = sec.dataset.mes;
+
+        // Filtro por botón
+        let pasaFiltro = true;
+        if (filtroActual === 'semana' && semana !== SEMANA_ACTUAL) pasaFiltro = false;
+        if (filtroActual === 'mes' && mes !== MES_ACTUAL) pasaFiltro = false;
+
+        // Filtro por búsqueda (dentro de la semana)
+        let tarjetasVisibles = 0;
+        sec.querySelectorAll('.cot-card').forEach(card => {{
+          const coincide = card.innerText.toLowerCase().includes(q);
+          card.style.display = coincide ? '' : 'none';
+          if (coincide) tarjetasVisibles++;
+        }});
+
+        sec.style.display = (pasaFiltro && tarjetasVisibles > 0) ? '' : 'none';
       }});
     }}
   </script>
@@ -352,17 +432,36 @@ def regenerar_index():
 
 
 # ============================================================
-# SUBIR A GITHUB
+# SUBIR A GITHUB (con pull previo para evitar conflictos)
 # ============================================================
 def subir_a_github():
     try:
+        # 1. Añadir cambios locales
         subprocess.run(["git", "add", "."], cwd=BASE_DIR, check=True, capture_output=True)
+
+        # 2. Commit (si no hay cambios, seguimos)
         msg = f"Actualización {datetime.now().strftime('%d/%m/%Y %H:%M')}"
         r = subprocess.run(["git", "commit", "-m", msg], cwd=BASE_DIR, capture_output=True)
         commit_out = (r.stdout or b"").decode() + (r.stderr or b"").decode()
         if "nothing to commit" in commit_out or "nada para hacer commit" in commit_out:
             return True, "ℹ️ No había cambios nuevos que subir."
-        subprocess.run(["git", "push"], cwd=BASE_DIR, check=True, capture_output=True)
+
+        # 3. Pull con rebase (trae cambios remotos sin crear merge commit)
+        pull = subprocess.run(["git", "pull", "--rebase", "origin", GITHUB_BRANCH],
+                              cwd=BASE_DIR, capture_output=True)
+        pull_out = (pull.stdout or b"").decode() + (pull.stderr or b"").decode()
+
+        if pull.returncode != 0:
+            # Si el pull falla, abortamos el rebase para no dejar el repo en mal estado
+            subprocess.run(["git", "rebase", "--abort"], cwd=BASE_DIR, capture_output=True)
+            return False, ("⚠️ No se pudo sincronizar con GitHub.\n\n"
+                           "Puede que haya cambios en el repo remoto que choquen.\n\n"
+                           f"Detalle:\n{pull_out[:500]}")
+
+        # 4. Push
+        subprocess.run(["git", "push", "origin", GITHUB_BRANCH],
+                       cwd=BASE_DIR, check=True, capture_output=True)
+
         return True, "✅ Subido a GitHub correctamente."
     except subprocess.CalledProcessError as e:
         error = (e.stderr or b"").decode() if e.stderr else str(e)
@@ -381,7 +480,7 @@ class VentanaLinks(tk.Toplevel):
         super().__init__(parent)
         self.title("🔗 Links de la cotización")
         self.configure(bg="#1e293b")
-        self.geometry("520x260")
+        self.geometry("520x280")
         self.resizable(False, False)
         self.transient(parent)
         self.grab_set()
@@ -394,9 +493,12 @@ class VentanaLinks(tk.Toplevel):
         self._crear_bloque("🔗 Link individual (esta cotización)", link_individual)
         self._crear_bloque("📋 Link del panel completo (para tu jefe)", link_panel)
 
+        tk.Label(self, text="⏱️ GitHub Pages tarda 30-60 seg en actualizar.",
+                 bg="#1e293b", fg="#fbbf24", font=("Segoe UI", 8, "italic")).pack(pady=(4, 0))
+
         tk.Button(self, text="Cerrar", bg="#334155", fg="white",
                   font=("Segoe UI", 10), relief=tk.FLAT, cursor="hand2",
-                  command=self.destroy).pack(pady=10)
+                  command=self.destroy).pack(pady=8)
 
     def _crear_bloque(self, titulo, url):
         frame = tk.Frame(self, bg="#1e293b")
@@ -451,7 +553,6 @@ class AppAluze:
         regenerar_index()
 
     def crear_formulario(self):
-        # LOGO
         logo_mostrado = False
         if LOGO_PNG.exists():
             try:
@@ -464,8 +565,8 @@ class AppAluze:
             except Exception as e:
                 print(f"Error cargando PNG: {e}")
         if not logo_mostrado:
-            aviso = "LogoAluze.png no encontrado\n(la app funciona sin él)"
-            tk.Label(self.sidebar, text=aviso, bg="#1e293b", fg="#fbbf24",
+            tk.Label(self.sidebar, text="LogoAluze.png no encontrado",
+                     bg="#1e293b", fg="#fbbf24",
                      font=("Segoe UI", 8, "italic")).pack(pady=(0, 8))
 
         tk.Label(self.sidebar, text="NUEVA COTIZACIÓN", bg="#1e293b",
@@ -504,7 +605,6 @@ class AppAluze:
                 txt.pack(fill=tk.X)
                 self.entries[label_text] = txt
 
-        # Checkbox subir automático
         self.subir_auto = tk.BooleanVar(value=True)
         tk.Checkbutton(self.form_frame, text="☁️ Subir a GitHub al guardar",
                        variable=self.subir_auto, bg="#1e293b", fg="#cbd5e1",
@@ -526,6 +626,11 @@ class AppAluze:
                   bg="#16a34a", fg="white", font=("Segoe UI", 10, "bold"),
                   relief=tk.FLAT, cursor="hand2",
                   command=self.accion_subir_github).pack(fill=tk.X, pady=(0, 8), ipady=6)
+
+        tk.Button(self.form_frame, text="🔄 Forzar actualización (pull + push)",
+                  bg="#7c3aed", fg="white", font=("Segoe UI", 9, "bold"),
+                  relief=tk.FLAT, cursor="hand2",
+                  command=self.accion_forzar_actualizacion).pack(fill=tk.X, pady=(0, 8), ipady=5)
 
         tk.Button(self.form_frame, text="🗑️ Borrar TODAS las cotizaciones",
                   bg="#7f1d1d", fg="#fecaca", font=("Segoe UI", 9, "bold"),
@@ -578,14 +683,12 @@ class AppAluze:
             self.limpiar_formulario()
             self.cargar_registros()
 
-            # Subir si está activado
             if self.subir_auto.get():
                 exito, msg = subir_a_github()
                 if not exito:
                     messagebox.showwarning("GitHub", f"Guardado local OK, pero falló la subida:\n\n{msg}")
                     return
 
-            # Mostrar ventana de links
             VentanaLinks(self.root, link_individual, URL_BASE)
 
         except Exception as e:
@@ -731,6 +834,21 @@ class AppAluze:
         exito, msg = subir_a_github()
         if exito:
             messagebox.showinfo("GitHub", msg)
+        else:
+            messagebox.showerror("GitHub", msg)
+
+    def accion_forzar_actualizacion(self):
+        """Pull forzado + push, con manejo de errores."""
+        if not messagebox.askyesno("Forzar actualización",
+                                   "Esto hará:\n"
+                                   "1. Guardar tus cambios locales\n"
+                                   "2. Traer cambios de GitHub\n"
+                                   "3. Subir todo\n\n"
+                                   "¿Continuar?"):
+            return
+        exito, msg = subir_a_github()
+        if exito:
+            messagebox.showinfo("GitHub", f"🔄 {msg}")
         else:
             messagebox.showerror("GitHub", msg)
 
