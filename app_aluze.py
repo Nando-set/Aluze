@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 # ============================================================
-# CONFIGURACIÓN (EDITA SOLO ESTAS 3 LÍNEAS SI CAMBIA ALGO)
+# CONFIGURACIÓN
 # ============================================================
 GITHUB_USER = "Nando-set"
 GITHUB_REPO = "Aluze"
@@ -24,7 +24,8 @@ GITHUB_BRANCH = "main"
 BASE_DIR = Path(__file__).resolve().parent
 DB_FILE = BASE_DIR / "base_datos_clientes.csv"
 LOGO_SVG = BASE_DIR / "LogoAluze.svg"
-LOGO_PNG = BASE_DIR / "LogoAluze.png"
+LOGO_PNG = BASE_DIR / "LogoAluze.png"              # Logo original (letras negras) - para tarjetas
+LOGO_PNG_CLARO = BASE_DIR / "LogoAluzeClaro.png"   # Logo claro (letras blancas) - para panel y Tkinter
 CARPETA_COTIZACIONES = BASE_DIR / "cotizaciones"
 CARPETA_ASSETS = BASE_DIR / "assets"
 INDEX_HTML = BASE_DIR / "index.html"
@@ -59,10 +60,15 @@ def inicializar_estructura():
     CARPETA_COTIZACIONES.mkdir(exist_ok=True)
     CARPETA_ASSETS.mkdir(exist_ok=True)
 
+    # Copiar SVG a assets (respaldo)
     if LOGO_SVG.exists():
         shutil.copy2(LOGO_SVG, CARPETA_ASSETS / "LogoAluze.svg")
+    # Copiar PNG original (letras negras) a assets
     if LOGO_PNG.exists():
         shutil.copy2(LOGO_PNG, CARPETA_ASSETS / "LogoAluze.png")
+    # Copiar PNG claro (letras blancas) a assets
+    if LOGO_PNG_CLARO.exists():
+        shutil.copy2(LOGO_PNG_CLARO, CARPETA_ASSETS / "LogoAluzeClaro.png")
 
     if not DB_FILE.exists():
         with open(DB_FILE, mode='w', newline='', encoding='utf-8') as f:
@@ -74,11 +80,27 @@ def inicializar_estructura():
             ])
 
 
-def obtener_logo_html(desde_subcarpeta=False):
-    if LOGO_PNG.exists():
-        ruta = "../../assets/LogoAluze.png" if desde_subcarpeta else "assets/LogoAluze.png"
+def obtener_logo_html(desde_subcarpeta=False, claro=False):
+    """
+    Devuelve el HTML del logo.
+    - desde_subcarpeta=True  -> ruta ../../assets/... (para tarjetas dentro de cotizaciones/)
+    - desde_subcarpeta=False -> ruta assets/... (para el panel en la raíz)
+    - claro=False -> usa LogoAluze.png (letras negras, para fondo blanco)
+    - claro=True  -> usa LogoAluzeClaro.png (letras blancas, para fondo oscuro)
+    """
+    archivo = "LogoAluzeClaro.png" if claro else "LogoAluze.png"
+    ruta_completa = LOGO_PNG_CLARO if claro else LOGO_PNG
+
+    if ruta_completa.exists():
+        if desde_subcarpeta:
+            ruta = f"../../assets/{archivo}"
+        else:
+            ruta = f"assets/{archivo}"
         return f'<img src="{ruta}" alt="Aluze" class="logo-img">'
-    return '<h2 style="color:#973359;margin:0;letter-spacing:3px;">ALUZE</h2>'
+
+    # Fallback si no existe
+    color = "#f8fafc" if claro else "#973359"
+    return f'<h2 style="color:{color};margin:0;letter-spacing:3px;">ALUZE</h2>'
 
 
 # ============================================================
@@ -107,7 +129,9 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(domicilio)}"
     telefono_limpio = re.sub(r'\D', '', telefono)
     whatsapp_url = f"https://wa.me/{telefono_limpio}"
-    logo_html = obtener_logo_html(desde_subcarpeta=True)
+
+    # TARJETA: fondo blanco, logo con letras negras
+    logo_html = obtener_logo_html(desde_subcarpeta=True, claro=False)
 
     html_content = f"""<!DOCTYPE html>
 <html lang="es">
@@ -263,7 +287,8 @@ def regenerar_index():
         if lunes_actual <= fecha_dt <= (domingo_actual.replace(hour=23, minute=59, second=59)):
             esta_semana += 1
 
-    logo_html = obtener_logo_html(desde_subcarpeta=False)
+    # PANEL: fondo oscuro, logo con letras claras
+    logo_html = obtener_logo_html(desde_subcarpeta=False, claro=True)
     bloques = []
 
     for clave in sorted(semanas.keys(), reverse=True):
@@ -541,20 +566,20 @@ class AppAluze:
         regenerar_index()
 
     def crear_formulario(self):
-        # LOGO
+        # LOGO CLARO (para fondo oscuro de la interfaz)
         logo_mostrado = False
-        if LOGO_PNG.exists():
+        if LOGO_PNG_CLARO.exists():
             try:
-                self.logo_img = tk.PhotoImage(file=str(LOGO_PNG))
+                self.logo_img = tk.PhotoImage(file=str(LOGO_PNG_CLARO))
                 factor = max(1, self.logo_img.width() // 220)
                 if factor > 1:
                     self.logo_img = self.logo_img.subsample(factor, factor)
                 tk.Label(self.sidebar, image=self.logo_img, bg="#1e293b").pack(pady=(0, 8))
                 logo_mostrado = True
             except Exception as e:
-                print(f"Error cargando PNG: {e}")
+                print(f"Error cargando PNG claro: {e}")
         if not logo_mostrado:
-            tk.Label(self.sidebar, text="LogoAluze.png no encontrado",
+            tk.Label(self.sidebar, text="LogoAluzeClaro.png no encontrado",
                      bg="#1e293b", fg="#fbbf24",
                      font=("Segoe UI", 8, "italic")).pack(pady=(0, 8))
 
@@ -647,14 +672,13 @@ class AppAluze:
         self.scrollbar_dash.pack(side=tk.RIGHT, fill=tk.Y)
 
     def regenerar_todas_las_tarjetas(self):
-        """Relee el CSV y regenera TODOS los HTML con el código actual."""
         if not DB_FILE.exists():
             messagebox.showwarning("Aviso", "No hay base de datos para regenerar.")
             return
 
         if not messagebox.askyesno("Confirmar",
                                    "Esto regenerará TODAS las tarjetas HTML\n"
-                                   "con el código actual (logo PNG, etc.).\n\n"
+                                   "con el código actual.\n\n"
                                    "El CSV no se toca, solo los HTML.\n\n"
                                    "¿Continuar?"):
             return
