@@ -12,7 +12,14 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 # ============================================================
-# CONFIGURACIÓN DE RUTAS (absolutas, basadas en el script)
+# CONFIGURACIÓN (EDITA SOLO ESTAS 2 LÍNEAS SI CAMBIA ALGO)
+# ============================================================
+GITHUB_USER = "Nando-set"
+GITHUB_REPO = "Aluze"
+GITHUB_BRANCH = "main"
+
+# ============================================================
+# RUTAS
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 DB_FILE = BASE_DIR / "base_datos_clientes.csv"
@@ -22,59 +29,53 @@ CARPETA_COTIZACIONES = BASE_DIR / "cotizaciones"
 CARPETA_ASSETS = BASE_DIR / "assets"
 INDEX_HTML = BASE_DIR / "index.html"
 
+URL_BASE = f"https://{GITHUB_USER.lower()}.github.io/{GITHUB_REPO}/"
+
 
 # ============================================================
 # UTILIDADES
 # ============================================================
 def sanitizar_nombre(texto):
-    """Convierte un texto en algo seguro para nombre de archivo/carpeta."""
     texto = texto.lower().strip()
-    texto = re.sub(r'[áàäâ]', 'a', texto)
-    texto = re.sub(r'[éèëê]', 'e', texto)
-    texto = re.sub(r'[íìïî]', 'i', texto)
-    texto = re.sub(r'[óòöô]', 'o', texto)
-    texto = re.sub(r'[úùüû]', 'u', texto)
-    texto = re.sub(r'[ñ]', 'n', texto)
+    reemplazos = {'á':'a','à':'a','ä':'a','â':'a','é':'e','è':'e','ë':'e','ê':'e',
+                  'í':'i','ì':'i','ï':'i','î':'i','ó':'o','ò':'o','ö':'o','ô':'o',
+                  'ú':'u','ù':'u','ü':'u','û':'u','ñ':'n'}
+    for k, v in reemplazos.items():
+        texto = texto.replace(k, v)
     texto = re.sub(r'[^a-z0-9_-]+', '_', texto)
     return texto.strip('_') or "sin_nombre"
 
 
 def obtener_semana_iso(fecha=None):
-    """Devuelve (año, semana, fecha_lunes, fecha_domingo) de la semana ISO."""
     if fecha is None:
         fecha = datetime.now()
     year, week, _ = fecha.isocalendar()
-    # Calcular lunes y domingo de esa semana
     lunes = fecha.fromordinal(fecha.toordinal() - fecha.weekday())
     domingo = fecha.fromordinal(lunes.toordinal() + 6)
     return year, week, lunes, domingo
 
 
 def inicializar_estructura():
-    """Crea todas las carpetas y la BD si no existen."""
     CARPETA_COTIZACIONES.mkdir(exist_ok=True)
     CARPETA_ASSETS.mkdir(exist_ok=True)
 
-    # Copiar el logo a assets/ para que GitHub Pages lo sirva
     if LOGO_SVG.exists():
         shutil.copy2(LOGO_SVG, CARPETA_ASSETS / "LogoAluze.svg")
 
-    # Crear BD si no existe
     if not DB_FILE.exists():
         with open(DB_FILE, mode='w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
                 "ID", "Fecha", "Cliente", "Domicilio", "Telefono",
-                "Concepto", "Cotizacion", "Monto", "Notas", "RutaHTML"
+                "Concepto", "Cotizacion", "Monto", "Notas",
+                "RutaHTML", "LinkIndividual"
             ])
 
 
 def obtener_logo_svg_inline():
-    """Devuelve el SVG limpio para embeber en HTML."""
     if LOGO_SVG.exists():
         try:
             contenido = LOGO_SVG.read_text(encoding="utf-8")
-            # Quitar width/height fijos para que escale por CSS
             contenido = re.sub(r'\s(width|height)="[^"]*"', '', contenido, count=2)
             if "<svg" in contenido:
                 return contenido
@@ -84,12 +85,11 @@ def obtener_logo_svg_inline():
 
 
 # ============================================================
-# GENERACIÓN DE TARJETA HTML INDIVIDUAL
+# GENERAR TARJETA HTML INDIVIDUAL
 # ============================================================
 def generar_html(id_reg, cliente, domicilio, telefono, concepto,
                  cotizacion, monto, notas, fecha):
-    # Carpeta por semana ISO
-    year, week, lunes, domingo = obtener_semana_iso()
+    year, week, _, _ = obtener_semana_iso()
     nombre_semana = f"{year}-Semana-{week:02d}"
     carpeta_semana = CARPETA_COTIZACIONES / nombre_semana
     carpeta_semana.mkdir(parents=True, exist_ok=True)
@@ -97,8 +97,8 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     cliente_seguro = sanitizar_nombre(cliente)
     nombre_archivo = f"cotizacion_{id_reg}_{cliente_seguro}.html"
     ruta_html = carpeta_semana / nombre_archivo
+    ruta_relativa = ruta_html.relative_to(BASE_DIR).as_posix()
 
-    # Escapar datos para HTML
     cliente_e = html.escape(cliente)
     domicilio_e = html.escape(domicilio)
     telefono_e = html.escape(telefono)
@@ -107,11 +107,9 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     monto_e = html.escape(monto)
     notas_e = html.escape(notas)
 
-    # URLs auxiliares
     maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(domicilio)}"
     telefono_limpio = re.sub(r'\D', '', telefono)
     whatsapp_url = f"https://wa.me/{telefono_limpio}"
-
     logo_html = obtener_logo_svg_inline()
 
     html_content = f"""<!DOCTYPE html>
@@ -122,15 +120,11 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
 <title>Cotización - {cliente_e} | Aluze</title>
 <style>
   * {{ box-sizing: border-box; }}
-  body {{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #0f172a; color: #334155; margin: 0; padding: 20px;
-    display: flex; justify-content: center; align-items: center; min-height: 100vh;
-  }}
-  .card {{
-    background: #fff; width: 100%; max-width: 440px; padding: 30px;
-    border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #0f172a; color: #334155; margin: 0; padding: 20px;
+         display: flex; justify-content: center; align-items: center; min-height: 100vh; }}
+  .card {{ background: #fff; width: 100%; max-width: 440px; padding: 30px;
+           border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }}
   .header-brand {{ text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }}
   .logo-container svg {{ max-width: 150px; height: auto; display: block; margin: 0 auto 8px; }}
   .tagline {{ font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #64748b; font-weight: 600; }}
@@ -203,12 +197,9 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     <div class="price-label">Monto Aproximado</div>
     <div class="price-value" id="val-monto">{monto_e}</div>
   </div>
-
   <button class="btn-universal-copy" onclick="copiarTodo()">📋 Copiar toda la información para chat</button>
-
   <div class="footer">Generado el {fecha} | Persianas Aluze</div>
 </div>
-
 <div id="toast" class="toast">¡Copiado!</div>
 <script>
 function mostrarToast(msg) {{
@@ -238,14 +229,13 @@ function copiarTodo() {{
 </html>
 """
     ruta_html.write_text(html_content, encoding="utf-8")
-    return ruta_html.relative_to(BASE_DIR).as_posix()
+    return ruta_relativa
 
 
 # ============================================================
-# GENERACIÓN DEL INDEX.HTML (dashboard para GitHub Pages)
+# GENERAR INDEX.HTML (panel del jefe, tarjetas clicables)
 # ============================================================
 def regenerar_index():
-    """Regenera el index.html con todas las cotizaciones agrupadas por semana."""
     if not DB_FILE.exists():
         return
 
@@ -254,7 +244,6 @@ def regenerar_index():
         next(reader, None)
         registros = [r for r in reader if len(r) >= 9]
 
-    # Agrupar por semana ISO usando la fecha
     semanas = {}
     for reg in registros:
         try:
@@ -263,14 +252,11 @@ def regenerar_index():
             fecha_dt = datetime.now()
         year, week, lunes, domingo = obtener_semana_iso(fecha_dt)
         clave = f"{year}-Semana-{week:02d}"
-        semanas.setdefault(clave, {
-            "lunes": lunes, "domingo": domingo, "registros": []
-        })["registros"].append(reg)
+        semanas.setdefault(clave, {"lunes": lunes, "domingo": domingo, "registros": []})["registros"].append(reg)
 
     logo_html = obtener_logo_svg_inline()
-
-    # Construir HTML
     bloques = []
+
     for clave in sorted(semanas.keys(), reverse=True):
         info = semanas[clave]
         lunes = info["lunes"].strftime("%d/%m/%Y")
@@ -283,11 +269,10 @@ def regenerar_index():
             concepto_e = html.escape(concepto)
             monto_e = html.escape(monto)
             telefono_e = html.escape(telefono)
-            notas_e = html.escape(notas[:120]) if notas else ""
-            link = f'<a class="btn-ver" href="{html.escape(ruta_html)}" target="_blank">🔗 Ver cotización completa</a>' if ruta_html else ""
-            nota_html = f'<div class="nota">📝 {notas_e}{"..." if len(notas) > 120 else ""}</div>' if notas else ""
+            notas_e = html.escape(notas[:100]) if notas else ""
+            nota_html = f'<div class="nota">📝 {notas_e}{"..." if len(notas) > 100 else ""}</div>' if notas else ""
             tarjetas.append(f"""
-            <div class="cot-card">
+            <a class="cot-card" href="{html.escape(ruta_html)}" target="_blank">
               <div class="cot-head">
                 <span class="cliente">👤 {cliente_e}</span>
                 <span class="monto">{monto_e}</span>
@@ -295,8 +280,8 @@ def regenerar_index():
               <div class="cot-info">📦 {concepto_e}</div>
               <div class="cot-info">📞 {telefono_e} &nbsp;|&nbsp; 🗓️ {html.escape(fecha)}</div>
               {nota_html}
-              {link}
-            </div>""")
+              <div class="cot-cta">🔗 Ver cotización completa →</div>
+            </a>""")
         bloques.append(f"""
         <section class="semana">
           <h2>📅 {clave} <span class="rango">({lunes} → {domingo})</span></h2>
@@ -323,15 +308,14 @@ def regenerar_index():
   .semana h2 {{ font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 14px; }}
   .rango {{ font-size: 12px; color: #94a3b8; font-weight: 400; }}
   .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }}
-  .cot-card {{ background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; transition: transform 0.15s, border-color 0.15s; }}
-  .cot-card:hover {{ transform: translateY(-2px); border-color: #973359; }}
+  .cot-card {{ display: block; text-decoration: none; background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; transition: transform 0.15s, border-color 0.15s; color: inherit; cursor: pointer; }}
+  .cot-card:hover {{ transform: translateY(-3px); border-color: #973359; box-shadow: 0 6px 20px rgba(151,51,89,0.2); }}
   .cot-head {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }}
   .cliente {{ font-weight: 700; color: #f8fafc; font-size: 15px; }}
   .monto {{ color: #34d399; font-weight: 700; font-size: 15px; white-space: nowrap; }}
   .cot-info {{ font-size: 13px; color: #cbd5e1; margin-bottom: 5px; }}
   .nota {{ font-size: 12px; color: #fbbf24; font-style: italic; margin-top: 6px; }}
-  .btn-ver {{ display: inline-block; margin-top: 10px; padding: 6px 12px; background: #973359; color: #fff; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: 600; }}
-  .btn-ver:hover {{ background: #b1406a; }}
+  .cot-cta {{ margin-top: 12px; padding-top: 10px; border-top: 1px solid #334155; font-size: 12px; color: #973359; font-weight: 600; }}
   .vacio {{ text-align: center; color: #64748b; padding: 40px; font-size: 15px; }}
   footer {{ text-align: center; color: #475569; font-size: 12px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e293b; }}
 </style>
@@ -371,17 +355,17 @@ def regenerar_index():
 # SUBIR A GITHUB
 # ============================================================
 def subir_a_github():
-    """Hace git add, commit y push."""
     try:
         subprocess.run(["git", "add", "."], cwd=BASE_DIR, check=True, capture_output=True)
         msg = f"Actualización {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-        subprocess.run(["git", "commit", "-m", msg], cwd=BASE_DIR, check=True, capture_output=True)
+        r = subprocess.run(["git", "commit", "-m", msg], cwd=BASE_DIR, capture_output=True)
+        commit_out = (r.stdout or b"").decode() + (r.stderr or b"").decode()
+        if "nothing to commit" in commit_out or "nada para hacer commit" in commit_out:
+            return True, "ℹ️ No había cambios nuevos que subir."
         subprocess.run(["git", "push"], cwd=BASE_DIR, check=True, capture_output=True)
         return True, "✅ Subido a GitHub correctamente."
     except subprocess.CalledProcessError as e:
-        error = e.stderr.decode() if e.stderr else str(e)
-        if "nothing to commit" in error or "nada para hacer commit" in error:
-            return True, "ℹ️ No había cambios nuevos que subir."
+        error = (e.stderr or b"").decode() if e.stderr else str(e)
         return False, f"❌ Error:\n{error}"
     except FileNotFoundError:
         return False, "❌ Git no está instalado o no está en el PATH."
@@ -390,13 +374,63 @@ def subir_a_github():
 
 
 # ============================================================
-# INTERFAZ TKINTER
+# VENTANA DE LINKS
+# ============================================================
+class VentanaLinks(tk.Toplevel):
+    def __init__(self, parent, link_individual, link_panel):
+        super().__init__(parent)
+        self.title("🔗 Links de la cotización")
+        self.configure(bg="#1e293b")
+        self.geometry("520x260")
+        self.resizable(False, False)
+        self.transient(parent)
+        self.grab_set()
+
+        tk.Label(self, text="✅ Cotización subida", bg="#1e293b", fg="#34d399",
+                 font=("Segoe UI", 13, "bold")).pack(pady=(18, 4))
+        tk.Label(self, text="Comparte estos links:", bg="#1e293b", fg="#94a3b8",
+                 font=("Segoe UI", 10)).pack(pady=(0, 14))
+
+        self._crear_bloque("🔗 Link individual (esta cotización)", link_individual)
+        self._crear_bloque("📋 Link del panel completo (para tu jefe)", link_panel)
+
+        tk.Button(self, text="Cerrar", bg="#334155", fg="white",
+                  font=("Segoe UI", 10), relief=tk.FLAT, cursor="hand2",
+                  command=self.destroy).pack(pady=10)
+
+    def _crear_bloque(self, titulo, url):
+        frame = tk.Frame(self, bg="#1e293b")
+        frame.pack(fill=tk.X, padx=20, pady=6)
+        tk.Label(frame, text=titulo, bg="#1e293b", fg="#cbd5e1",
+                 font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        row = tk.Frame(frame, bg="#1e293b")
+        row.pack(fill=tk.X, pady=(2, 0))
+        entry = tk.Entry(row, font=("Segoe UI", 9), bg="#0f172a", fg="#f8fafc",
+                         relief=tk.FLAT, insertbackground="white")
+        entry.insert(0, url)
+        entry.configure(state="readonly")
+        entry.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=4)
+        tk.Button(row, text="📋", bg="#973359", fg="white", relief=tk.FLAT,
+                  cursor="hand2", font=("Segoe UI", 9, "bold"),
+                  command=lambda u=url: self._copiar(u)).pack(side=tk.LEFT, padx=(4, 0))
+        tk.Button(row, text="🌐", bg="#0ea5e9", fg="white", relief=tk.FLAT,
+                  cursor="hand2", font=("Segoe UI", 9, "bold"),
+                  command=lambda u=url: webbrowser.open(u)).pack(side=tk.LEFT, padx=(4, 0))
+
+    def _copiar(self, texto):
+        self.clipboard_clear()
+        self.clipboard_append(texto)
+        messagebox.showinfo("Copiado", "Link copiado al portapapeles.", parent=self)
+
+
+# ============================================================
+# INTERFAZ PRINCIPAL
 # ============================================================
 class AppAluze:
     def __init__(self, root):
         self.root = root
         self.root.title("Aluze - Sistema de Cotizaciones")
-        self.root.geometry("1150x750")
+        self.root.geometry("1150x780")
         self.root.configure(bg="#0f172a")
 
         inicializar_estructura()
@@ -404,12 +438,10 @@ class AppAluze:
         style = ttk.Style()
         style.theme_use('clam')
 
-        # Sidebar
-        self.sidebar = tk.Frame(root, bg="#1e293b", width=400, padx=15, pady=15)
+        self.sidebar = tk.Frame(root, bg="#1e293b", width=410, padx=15, pady=15)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         self.sidebar.pack_propagate(False)
 
-        # Panel principal
         self.main_panel = tk.Frame(root, bg="#0f172a", padx=15, pady=15)
         self.main_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -419,20 +451,25 @@ class AppAluze:
         regenerar_index()
 
     def crear_formulario(self):
-        # Logo
+        # LOGO
+        logo_mostrado = False
         if LOGO_PNG.exists():
             try:
                 self.logo_img = tk.PhotoImage(file=str(LOGO_PNG))
-                # Redimensionar si es muy grande
                 factor = max(1, self.logo_img.width() // 220)
                 if factor > 1:
                     self.logo_img = self.logo_img.subsample(factor, factor)
                 tk.Label(self.sidebar, image=self.logo_img, bg="#1e293b").pack(pady=(0, 8))
-            except Exception:
-                pass
+                logo_mostrado = True
+            except Exception as e:
+                print(f"Error cargando PNG: {e}")
+        if not logo_mostrado:
+            aviso = "LogoAluze.png no encontrado\n(la app funciona sin él)"
+            tk.Label(self.sidebar, text=aviso, bg="#1e293b", fg="#fbbf24",
+                     font=("Segoe UI", 8, "italic")).pack(pady=(0, 8))
 
         tk.Label(self.sidebar, text="NUEVA COTIZACIÓN", bg="#1e293b",
-                 fg="#f8fafc", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 12))
+                 fg="#f8fafc", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 10))
 
         canvas = tk.Canvas(self.sidebar, bg="#1e293b", highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.sidebar, orient="vertical", command=canvas.yview)
@@ -467,20 +504,33 @@ class AppAluze:
                 txt.pack(fill=tk.X)
                 self.entries[label_text] = txt
 
+        # Checkbox subir automático
+        self.subir_auto = tk.BooleanVar(value=True)
+        tk.Checkbutton(self.form_frame, text="☁️ Subir a GitHub al guardar",
+                       variable=self.subir_auto, bg="#1e293b", fg="#cbd5e1",
+                       selectcolor="#334155", activebackground="#1e293b",
+                       activeforeground="#f8fafc", font=("Segoe UI", 9),
+                       cursor="hand2").pack(anchor="w", pady=(14, 6))
+
         tk.Button(self.form_frame, text="✨ Generar Tarjeta y Guardar",
                   bg="#973359", fg="white", font=("Segoe UI", 10, "bold"),
                   relief=tk.FLAT, cursor="hand2",
-                  command=self.guardar_cotizacion).pack(fill=tk.X, pady=(20, 8), ipady=8)
+                  command=self.guardar_cotizacion).pack(fill=tk.X, pady=(4, 8), ipady=8)
 
-        tk.Button(self.form_frame, text="🌐 Regenerar Panel (index.html)",
+        tk.Button(self.form_frame, text="🌐 Abrir panel web",
                   bg="#0ea5e9", fg="white", font=("Segoe UI", 10, "bold"),
                   relief=tk.FLAT, cursor="hand2",
-                  command=self.accion_regenerar_index).pack(fill=tk.X, pady=(0, 8), ipady=6)
+                  command=lambda: webbrowser.open(URL_BASE)).pack(fill=tk.X, pady=(0, 8), ipady=6)
 
-        tk.Button(self.form_frame, text="☁️ Subir a GitHub",
+        tk.Button(self.form_frame, text="☁️ Subir TODO a GitHub",
                   bg="#16a34a", fg="white", font=("Segoe UI", 10, "bold"),
                   relief=tk.FLAT, cursor="hand2",
                   command=self.accion_subir_github).pack(fill=tk.X, pady=(0, 8), ipady=6)
+
+        tk.Button(self.form_frame, text="🗑️ Borrar TODAS las cotizaciones",
+                  bg="#7f1d1d", fg="#fecaca", font=("Segoe UI", 9, "bold"),
+                  relief=tk.FLAT, cursor="hand2",
+                  command=self.borrar_todo).pack(fill=tk.X, pady=(0, 8), ipady=5)
 
     def crear_dashboard(self):
         tk.Label(self.main_panel, text="REGISTRO DE COTIZACIONES",
@@ -511,21 +561,33 @@ class AppAluze:
             return
 
         fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-        id_reg = int(datetime.now().timestamp() * 1000)  # ms para evitar duplicados
+        id_reg = int(datetime.now().timestamp() * 1000)
 
         try:
             ruta_relativa = generar_html(id_reg, cliente, domicilio, telefono,
                                          concepto, cotizacion, monto, notas, fecha)
+            link_individual = f"{URL_BASE}{ruta_relativa}"
 
             with open(DB_FILE, mode='a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow([id_reg, fecha, cliente, domicilio, telefono,
-                                 concepto, cotizacion, monto, notas, ruta_relativa])
+                                 concepto, cotizacion, monto, notas,
+                                 ruta_relativa, link_individual])
 
             regenerar_index()
-            messagebox.showinfo("Éxito", f"✅ Cotización guardada para {cliente}.\n\n📁 {ruta_relativa}")
             self.limpiar_formulario()
             self.cargar_registros()
+
+            # Subir si está activado
+            if self.subir_auto.get():
+                exito, msg = subir_a_github()
+                if not exito:
+                    messagebox.showwarning("GitHub", f"Guardado local OK, pero falló la subida:\n\n{msg}")
+                    return
+
+            # Mostrar ventana de links
+            VentanaLinks(self.root, link_individual, URL_BASE)
+
         except Exception as e:
             messagebox.showerror("Error al guardar", f"No se pudo guardar:\n\n{e}")
 
@@ -556,6 +618,7 @@ class AppAluze:
         for reg in reversed(registros):
             id_reg, fecha, cliente, domicilio, telefono, concepto, cotizacion, monto, notas = reg[:9]
             ruta_html = reg[9] if len(reg) > 9 else ""
+            link_ind = reg[10] if len(reg) > 10 else ""
 
             card = tk.Frame(self.cards_frame, bg="#1e293b", padx=15, pady=12)
             card.pack(fill=tk.X, pady=6, padx=5)
@@ -568,8 +631,7 @@ class AppAluze:
                      font=("Segoe UI", 11, "bold")).pack(side=tk.RIGHT)
 
             tk.Label(card, text=f"Concepto: {concepto} | Tel: {telefono} | {fecha}",
-                     bg="#1e293b", fg="#94a3b8",
-                     font=("Segoe UI", 9)).pack(anchor="w", pady=(4, 6))
+                     bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9)).pack(anchor="w", pady=(4, 6))
 
             if notas:
                 tk.Label(card, text=f"📝 {notas[:100]}", bg="#1e293b", fg="#fbbf24",
@@ -582,6 +644,11 @@ class AppAluze:
                       font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
                       command=lambda r=ruta_html: self.abrir_html(r)).pack(side=tk.LEFT, padx=(0, 6))
 
+            if link_ind:
+                tk.Button(btn_frame, text="📋 Copiar link", bg="#973359", fg="white",
+                          font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
+                          command=lambda u=link_ind: self.copiar_al_portapapeles(u)).pack(side=tk.LEFT, padx=(0, 6))
+
             tel_limpio = re.sub(r'\D', '', telefono)
             tk.Button(btn_frame, text="💬 WA", bg="#16a34a", fg="white",
                       font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
@@ -590,6 +657,11 @@ class AppAluze:
             tk.Button(btn_frame, text="🗑️", bg="#ef4444", fg="white",
                       font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
                       command=lambda i=id_reg: self.eliminar_registro(i)).pack(side=tk.LEFT)
+
+    def copiar_al_portapapeles(self, texto):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(texto)
+        messagebox.showinfo("Copiado", "Link copiado al portapapeles.")
 
     def abrir_html(self, ruta_relativa):
         if not ruta_relativa:
@@ -627,9 +699,33 @@ class AppAluze:
         regenerar_index()
         self.cargar_registros()
 
-    def accion_regenerar_index(self):
-        regenerar_index()
-        messagebox.showinfo("Listo", "✅ Panel index.html regenerado.")
+    def borrar_todo(self):
+        if not messagebox.askyesno("⚠️ Confirmar",
+                                   "¿Borrar TODAS las cotizaciones?\n\n"
+                                   "Se eliminará el CSV, la carpeta de cotizaciones\n"
+                                   "y se regenerará el panel.\n\n"
+                                   "Esta acción NO se puede deshacer."):
+            return
+        if not messagebox.askyesno("⚠️ ¿SEGURO?",
+                                   "Esta es tu última oportunidad.\n\n"
+                                   "¿Realmente quieres borrar TODO?"):
+            return
+        try:
+            if DB_FILE.exists():
+                DB_FILE.unlink()
+            if CARPETA_COTIZACIONES.exists():
+                shutil.rmtree(CARPETA_COTIZACIONES)
+            if INDEX_HTML.exists():
+                INDEX_HTML.unlink()
+            inicializar_estructura()
+            regenerar_index()
+            self.cargar_registros()
+            messagebox.showinfo("Listo",
+                                "✅ Todo borrado.\n\n"
+                                "Recuerda pulsar '☁️ Subir TODO a GitHub'\n"
+                                "para reflejar el cambio en la nube.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo borrar todo:\n\n{e}")
 
     def accion_subir_github(self):
         exito, msg = subir_a_github()
