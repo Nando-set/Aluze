@@ -50,7 +50,7 @@
   <div class="header">
     <img src="assets/LogoAluze.png" alt="Aluze" class="logo-img">
     <h1>Panel de Cotizaciones</h1>
-    <p>Persianas &amp; Decoración · Actualizado el 06/10/2026 04:00</p>
+    <p>Persianas &amp; Decoración · Actualizado el 06/10/2026 04:08</p>
     <div class="contador">
       <div class="stat"><span class="num">5</span><span class="lbl">Total</span></div>
       <div class="stat destacado"><span class="num">5</span><span class="lbl">Esta semana</span></div>
@@ -150,12 +150,10 @@ La cliente dice que no hay señal
         const semana = sec.dataset.semana;
         const mes = sec.dataset.mes;
 
-        // Filtro por botón
         let pasaFiltro = true;
         if (filtroActual === 'semana' && semana !== SEMANA_ACTUAL) pasaFiltro = false;
         if (filtroActual === 'mes' && mes !== MES_ACTUAL) pasaFiltro = false;
 
-        // Filtro por búsqueda (dentro de la semana)
         let tarjetasVisibles = 0;
         sec.querySelectorAll('.cot-card').forEach(card => {
           const coincide = card.innerText.toLowerCase().includes(q);

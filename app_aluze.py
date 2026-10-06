@@ -59,10 +59,8 @@ def inicializar_estructura():
     CARPETA_COTIZACIONES.mkdir(exist_ok=True)
     CARPETA_ASSETS.mkdir(exist_ok=True)
 
-    # Copiar logo SVG a assets (por si se usa en el futuro)
     if LOGO_SVG.exists():
         shutil.copy2(LOGO_SVG, CARPETA_ASSETS / "LogoAluze.svg")
-    # Copiar logo PNG a assets (el que se usará realmente)
     if LOGO_PNG.exists():
         shutil.copy2(LOGO_PNG, CARPETA_ASSETS / "LogoAluze.png")
 
@@ -77,16 +75,9 @@ def inicializar_estructura():
 
 
 def obtener_logo_html(desde_subcarpeta=False):
-    """
-    Devuelve el HTML del logo.
-    - desde_subcarpeta=True  -> ruta ../../assets/LogoAluze.png (para tarjetas dentro de cotizaciones/)
-    - desde_subcarpeta=False -> ruta assets/LogoAluze.png (para el panel en la raíz)
-    Si no existe el PNG, devuelve un fallback de texto.
-    """
     if LOGO_PNG.exists():
         ruta = "../../assets/LogoAluze.png" if desde_subcarpeta else "assets/LogoAluze.png"
         return f'<img src="{ruta}" alt="Aluze" class="logo-img">'
-    # Fallback
     return '<h2 style="color:#973359;margin:0;letter-spacing:3px;">ALUZE</h2>'
 
 
@@ -251,7 +242,6 @@ def regenerar_index():
         next(reader, None)
         registros = [r for r in reader if len(r) >= 9]
 
-    # Semanas ISO
     semanas = {}
     for reg in registros:
         try:
@@ -262,7 +252,6 @@ def regenerar_index():
         clave = f"{year}-Semana-{week:02d}"
         semanas.setdefault(clave, {"lunes": lunes, "domingo": domingo, "registros": []})["registros"].append(reg)
 
-    # Métricas globales
     total = len(registros)
     _, _, lunes_actual, domingo_actual = obtener_semana_iso()
     esta_semana = 0
@@ -283,12 +272,10 @@ def regenerar_index():
         domingo = info["domingo"].strftime("%d/%m/%Y")
         cantidad = len(info["registros"])
 
-        # Semana actual vs antigua
         year_actual, week_actual, _, _ = obtener_semana_iso()
         es_actual = clave == f"{year_actual}-Semana-{week_actual:02d}"
         clase_semana = "semana semana-actual" if es_actual else "semana"
 
-        # Fecha de la semana para filtro por mes (YYYY-MM)
         mes_clave = info["lunes"].strftime("%Y-%m")
 
         tarjetas = []
@@ -416,12 +403,10 @@ def regenerar_index():
         const semana = sec.dataset.semana;
         const mes = sec.dataset.mes;
 
-        // Filtro por botón
         let pasaFiltro = true;
         if (filtroActual === 'semana' && semana !== SEMANA_ACTUAL) pasaFiltro = false;
         if (filtroActual === 'mes' && mes !== MES_ACTUAL) pasaFiltro = false;
 
-        // Filtro por búsqueda (dentro de la semana)
         let tarjetasVisibles = 0;
         sec.querySelectorAll('.cot-card').forEach(card => {{
           const coincide = card.innerText.toLowerCase().includes(q);
@@ -440,33 +425,28 @@ def regenerar_index():
 
 
 # ============================================================
-# SUBIR A GITHUB (con pull previo para evitar conflictos)
+# SUBIR A GITHUB
 # ============================================================
 def subir_a_github():
     try:
-        # 1. Añadir cambios locales
         subprocess.run(["git", "add", "."], cwd=BASE_DIR, check=True, capture_output=True)
 
-        # 2. Commit (si no hay cambios, seguimos)
         msg = f"Actualización {datetime.now().strftime('%d/%m/%Y %H:%M')}"
         r = subprocess.run(["git", "commit", "-m", msg], cwd=BASE_DIR, capture_output=True)
         commit_out = (r.stdout or b"").decode() + (r.stderr or b"").decode()
         if "nothing to commit" in commit_out or "nada para hacer commit" in commit_out:
             return True, "ℹ️ No había cambios nuevos que subir."
 
-        # 3. Pull con rebase (trae cambios remotos sin crear merge commit)
         pull = subprocess.run(["git", "pull", "--rebase", "origin", GITHUB_BRANCH],
                               cwd=BASE_DIR, capture_output=True)
         pull_out = (pull.stdout or b"").decode() + (pull.stderr or b"").decode()
 
         if pull.returncode != 0:
-            # Si el pull falla, abortamos el rebase para no dejar el repo en mal estado
             subprocess.run(["git", "rebase", "--abort"], cwd=BASE_DIR, capture_output=True)
             return False, ("⚠️ No se pudo sincronizar con GitHub.\n\n"
                            "Puede que haya cambios en el repo remoto que choquen.\n\n"
                            f"Detalle:\n{pull_out[:500]}")
 
-        # 4. Push
         subprocess.run(["git", "push", "origin", GITHUB_BRANCH],
                        cwd=BASE_DIR, check=True, capture_output=True)
 
@@ -561,6 +541,7 @@ class AppAluze:
         regenerar_index()
 
     def crear_formulario(self):
+        # LOGO
         logo_mostrado = False
         if LOGO_PNG.exists():
             try:
@@ -640,6 +621,11 @@ class AppAluze:
                   relief=tk.FLAT, cursor="hand2",
                   command=self.accion_forzar_actualizacion).pack(fill=tk.X, pady=(0, 8), ipady=5)
 
+        tk.Button(self.form_frame, text="🔁 Regenerar todas las tarjetas",
+                  bg="#0891b2", fg="white", font=("Segoe UI", 9, "bold"),
+                  relief=tk.FLAT, cursor="hand2",
+                  command=self.regenerar_todas_las_tarjetas).pack(fill=tk.X, pady=(0, 8), ipady=5)
+
         tk.Button(self.form_frame, text="🗑️ Borrar TODAS las cotizaciones",
                   bg="#7f1d1d", fg="#fecaca", font=("Segoe UI", 9, "bold"),
                   relief=tk.FLAT, cursor="hand2",
@@ -659,6 +645,46 @@ class AppAluze:
         self.canvas_dash.configure(yscrollcommand=self.scrollbar_dash.set)
         self.canvas_dash.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar_dash.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def regenerar_todas_las_tarjetas(self):
+        """Relee el CSV y regenera TODOS los HTML con el código actual."""
+        if not DB_FILE.exists():
+            messagebox.showwarning("Aviso", "No hay base de datos para regenerar.")
+            return
+
+        if not messagebox.askyesno("Confirmar",
+                                   "Esto regenerará TODAS las tarjetas HTML\n"
+                                   "con el código actual (logo PNG, etc.).\n\n"
+                                   "El CSV no se toca, solo los HTML.\n\n"
+                                   "¿Continuar?"):
+            return
+
+        try:
+            with open(DB_FILE, mode='r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                next(reader, None)
+                registros = [r for r in reader if len(r) >= 9]
+
+            total = len(registros)
+            if total == 0:
+                messagebox.showinfo("Info", "No hay cotizaciones para regenerar.")
+                return
+
+            for i, reg in enumerate(registros, 1):
+                id_reg, fecha, cliente, domicilio, telefono, concepto, cotizacion, monto, notas = reg[:9]
+                try:
+                    generar_html(id_reg, cliente, domicilio, telefono,
+                                 concepto, cotizacion, monto, notas, fecha)
+                except Exception as e:
+                    print(f"Error regenerando {cliente}: {e}")
+
+            regenerar_index()
+
+            messagebox.showinfo("Listo",
+                                f"✅ {total} tarjetas regeneradas.\n\n"
+                                "Pulsa '☁️ Subir TODO a GitHub' para actualizar la nube.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo regenerar:\n\n{e}")
 
     def guardar_cotizacion(self):
         cliente = self.entries["Nombre del Cliente"].get().strip()
@@ -846,7 +872,6 @@ class AppAluze:
             messagebox.showerror("GitHub", msg)
 
     def accion_forzar_actualizacion(self):
-        """Pull forzado + push, con manejo de errores."""
         if not messagebox.askyesno("Forzar actualización",
                                    "Esto hará:\n"
                                    "1. Guardar tus cambios locales\n"
