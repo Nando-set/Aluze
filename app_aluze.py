@@ -59,8 +59,12 @@ def inicializar_estructura():
     CARPETA_COTIZACIONES.mkdir(exist_ok=True)
     CARPETA_ASSETS.mkdir(exist_ok=True)
 
+    # Copiar logo SVG a assets (por si se usa en el futuro)
     if LOGO_SVG.exists():
         shutil.copy2(LOGO_SVG, CARPETA_ASSETS / "LogoAluze.svg")
+    # Copiar logo PNG a assets (el que se usará realmente)
+    if LOGO_PNG.exists():
+        shutil.copy2(LOGO_PNG, CARPETA_ASSETS / "LogoAluze.png")
 
     if not DB_FILE.exists():
         with open(DB_FILE, mode='w', newline='', encoding='utf-8') as f:
@@ -72,15 +76,17 @@ def inicializar_estructura():
             ])
 
 
-def obtener_logo_svg_inline():
-    if LOGO_SVG.exists():
-        try:
-            contenido = LOGO_SVG.read_text(encoding="utf-8")
-            contenido = re.sub(r'\s(width|height)="[^"]*"', '', contenido, count=2)
-            if "<svg" in contenido:
-                return contenido
-        except Exception:
-            pass
+def obtener_logo_html(desde_subcarpeta=False):
+    """
+    Devuelve el HTML del logo.
+    - desde_subcarpeta=True  -> ruta ../../assets/LogoAluze.png (para tarjetas dentro de cotizaciones/)
+    - desde_subcarpeta=False -> ruta assets/LogoAluze.png (para el panel en la raíz)
+    Si no existe el PNG, devuelve un fallback de texto.
+    """
+    if LOGO_PNG.exists():
+        ruta = "../../assets/LogoAluze.png" if desde_subcarpeta else "assets/LogoAluze.png"
+        return f'<img src="{ruta}" alt="Aluze" class="logo-img">'
+    # Fallback
     return '<h2 style="color:#973359;margin:0;letter-spacing:3px;">ALUZE</h2>'
 
 
@@ -110,7 +116,7 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(domicilio)}"
     telefono_limpio = re.sub(r'\D', '', telefono)
     whatsapp_url = f"https://wa.me/{telefono_limpio}"
-    logo_html = obtener_logo_svg_inline()
+    logo_html = obtener_logo_html(desde_subcarpeta=True)
 
     html_content = f"""<!DOCTYPE html>
 <html lang="es">
@@ -127,6 +133,7 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }}
   .header-brand {{ text-align: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }}
   .logo-container svg {{ max-width: 150px; height: auto; display: block; margin: 0 auto 8px; }}
+  .logo-container img {{ max-width: 150px; height: auto; display: block; margin: 0 auto 8px; }}
   .tagline {{ font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #64748b; font-weight: 600; }}
   .card-title {{ font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #973359; font-weight: 700; margin: 0 0 20px; text-align: center; }}
   .section {{ margin-bottom: 18px; }}
@@ -267,7 +274,7 @@ def regenerar_index():
         if lunes_actual <= fecha_dt <= (domingo_actual.replace(hour=23, minute=59, second=59)):
             esta_semana += 1
 
-    logo_html = obtener_logo_svg_inline()
+    logo_html = obtener_logo_html(desde_subcarpeta=False)
     bloques = []
 
     for clave in sorted(semanas.keys(), reverse=True):
@@ -325,6 +332,7 @@ def regenerar_index():
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }}
   .header {{ text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #1e293b; }}
   .header svg {{ max-width: 180px; height: auto; }}
+  .header img {{ max-width: 180px; height: auto; }}
   .header h1 {{ font-size: 22px; margin: 12px 0 4px; color: #f8fafc; }}
   .header p {{ color: #94a3b8; font-size: 13px; margin: 0; }}
   .contador {{ display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }}
