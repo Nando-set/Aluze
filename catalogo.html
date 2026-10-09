@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aluze | Catálogo de Productos</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+  .header { text-align: center; margin-bottom: 24px; padding-bottom: 20px;
+            border-bottom: 2px solid #1e293b; }
+  .header img { max-width: 180px; height: auto; }
+  .header h1 { font-size: 22px; margin: 12px 0 4px; color: #f8fafc; }
+  .header p { color: #94a3b8; font-size: 13px; margin: 0; }
+
+  .top-nav { max-width: 640px; margin: 16px auto 0; text-align: center; }
+  .top-nav a { display: inline-block; padding: 8px 18px; border-radius: 8px;
+               background: #1e293b; color: #cbd5e1; text-decoration: none;
+               font-size: 13px; font-weight: 600; border: 1px solid #334155; }
+  .top-nav a:hover { border-color: #973359; color: #f8fafc; }
+
+  .controles { max-width: 640px; margin: 24px auto 30px; }
+  .buscador input { width: 100%; padding: 12px 16px; border-radius: 10px;
+                    border: 1px solid #334155; background: #1e293b;
+                    color: #f8fafc; font-size: 15px; outline: none; }
+  .buscador input:focus { border-color: #973359; }
+  .filtros { display: flex; gap: 8px; justify-content: center;
+             margin-top: 12px; flex-wrap: wrap; }
+  .filtros button { padding: 8px 14px; border-radius: 8px; border: 1px solid #334155;
+                    background: #1e293b; color: #cbd5e1; font-size: 12px;
+                    font-weight: 600; cursor: pointer; }
+  .filtros button:hover { border-color: #973359; color: #f8fafc; }
+  .filtros button.activo { background: #973359; border-color: #973359; color: #fff; }
+
+  .categoria { margin-bottom: 40px; }
+  .categoria h2 { font-size: 16px; color: #f8fafc; border-left: 4px solid #973359;
+                  padding-left: 10px; margin-bottom: 16px;
+                  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .badge { background: #334155; color: #cbd5e1; font-size: 11px;
+           padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card { display: block; text-decoration: none; background: #1e293b;
+          border-radius: 12px; overflow: hidden; border: 1px solid #334155;
+          transition: transform 0.15s, border-color 0.15s; color: inherit; }
+  .card:hover { transform: translateY(-3px); border-color: #973359;
+                box-shadow: 0 6px 20px rgba(151,51,89,0.2); }
+  .card-img { width: 100%; aspect-ratio: 1/1; background: #0f172a;
+              display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-img .placeholder { font-size: 60px; color: #334155; }
+  .card-body { padding: 14px; }
+  .card-body h3 { font-size: 15px; color: #f8fafc; margin: 0 0 6px; }
+  .card-body p { font-size: 12px; color: #94a3b8; margin: 0 0 10px;
+                 display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                 overflow: hidden; }
+  .card-cta { font-size: 12px; color: #973359; font-weight: 600; }
+
+  .vacio { text-align: center; color: #64748b; padding: 60px 20px; }
+  footer { text-align: center; color: #475569; font-size: 12px;
+           margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <img src="assets/LogoAluzeClaro.png" alt="Aluze" class="logo-img">
+    <h1>Catálogo de Productos</h1>
+    <p>Persianas &amp; Decoración · Actualizado el 09/10/2026 02:18</p>
+    <div class="top-nav">
+      <a href="index.html">← Volver al panel de cotizaciones</a>
+    </div>
+  </div>
+
+  <div class="controles">
+    <div class="buscador">
+      <input type="text" id="buscador" placeholder="🔍 Buscar producto..." oninput="aplicarFiltros()">
+    </div>
+    <div class="filtros">
+      <button class="activo" data-filtro="todas" onclick="setFiltro('todas', this)">📋 Todas</button><button data-filtro="interior" onclick="setFiltro('interior', this)">🏠 Persianas de interior</button>
+    </div>
+  </div>
+
+  <div id="contenido">
+    
+        <section class="categoria" data-categoria="interior">
+          <h2>🏠 Persianas de interior
+            <span class="badge">1 modelo</span>
+          </h2>
+          <div class="grid">
+            
+    <a class="card" href="catalogo/paginas/sheer_elegance.html">
+      <div class="card-img"><img src="catalogo/imagenes/sheer_elegance/01_thumb.webp" alt="Sheer Elegance" loading="lazy"></div>
+      <div class="card-body">
+        <h3>Sheer Elegance</h3>
+        <p>Persianas con franjas superpuesta (una franja opaca y otra traslucida)</p>
+        <div class="card-cta">Ver detalles →</div>
+      </div>
+    </a>
+          </div>
+        </section>
+  </div>
+
+  <footer>Persianas Aluze · Catálogo generado automáticamente</footer>
+
+  <script>
+    let filtroActual = "todas";
+
+    function setFiltro(filtro, boton) {
+      filtroActual = filtro;
+      document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('activo'));
+      boton.classList.add('activo');
+      aplicarFiltros();
+    }
+
+    function aplicarFiltros() {
+      const q = document.getElementById('buscador').value.toLowerCase();
+
+      document.querySelectorAll('.categoria').forEach(sec => {
+        const cat = sec.dataset.categoria;
+        let pasaFiltro = true;
+        if (filtroActual !== 'todas' && cat !== filtroActual) pasaFiltro = false;
+
+        let cardsVisibles = 0;
+        sec.querySelectorAll('.card').forEach(card => {
+          const coincide = card.innerText.toLowerCase().includes(q);
+          card.style.display = coincide ? '' : 'none';
+          if (coincide) cardsVisibles++;
+        });
+
+        sec.style.display = (pasaFiltro && cardsVisibles > 0) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

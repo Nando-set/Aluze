@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sheer Elegance | Catálogo Aluze</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  .header { display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #1e293b; }
+  .header img { max-width: 140px; height: auto; }
+  .header .volver { padding: 8px 16px; border-radius: 8px; background: #1e293b;
+                    color: #cbd5e1; text-decoration: none; font-size: 13px;
+                    font-weight: 600; border: 1px solid #334155; }
+  .header .volver:hover { border-color: #973359; color: #f8fafc; }
+
+  .detalle { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
+  @media (max-width: 700px) { .detalle { grid-template-columns: 1fr; } }
+
+  /* Carrusel */
+  .carrusel { position: relative; background: #1e293b; border-radius: 12px;
+              overflow: hidden; aspect-ratio: 1/1; }
+  .carrusel.vacio { display: flex; flex-direction: column; align-items: center;
+                    justify-content: center; color: #475569; font-size: 50px; }
+  .carrusel.vacio p { font-size: 13px; margin: 10px 0 0; }
+  .slides { width: 100%; height: 100%; position: relative; }
+  .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s; }
+  .slide.activo { opacity: 1; }
+  .slide img { width: 100%; height: 100%; object-fit: cover; }
+  .nav { position: absolute; top: 50%; transform: translateY(-50%);
+         background: rgba(15, 23, 42, 0.7); color: #fff; border: none;
+         font-size: 30px; width: 44px; height: 44px; border-radius: 50%;
+         cursor: pointer; font-weight: 300; }
+  .nav:hover { background: rgba(151, 51, 89, 0.9); }
+  .nav.prev { left: 10px; }
+  .nav.next { right: 10px; }
+  .puntos { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 6px; }
+  .punto { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4);
+           cursor: pointer; }
+  .punto.activo { background: #fff; }
+
+  /* Info */
+  .info h1 { font-size: 26px; color: #f8fafc; margin: 0 0 12px; }
+  .info .descripcion { font-size: 14px; color: #cbd5e1; line-height: 1.6;
+                       margin-bottom: 20px; white-space: pre-line; }
+  .video-box { margin-top: 20px; border-radius: 12px; overflow: hidden;
+               background: #1e293b; }
+  .video-box video { width: 100%; display: block; }
+
+  /* Líneas */
+  .seccion-titulo { font-size: 18px; color: #f8fafc; border-left: 4px solid #973359;
+                    padding-left: 12px; margin: 30px 0 16px; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tab { padding: 10px 18px; border-radius: 8px; background: #1e293b;
+         color: #cbd5e1; border: 1px solid #334155; cursor: pointer;
+         font-size: 13px; font-weight: 600; }
+  .tab:hover { border-color: #973359; color: #f8fafc; }
+  .tab.activo { background: #973359; border-color: #973359; color: #fff; }
+
+  .linea { display: none; }
+  .linea.activo { display: block; }
+  .linea-inner { display: grid; grid-template-columns: 200px 1fr; gap: 20px;
+                 background: #1e293b; border-radius: 12px; padding: 20px;
+                 border: 1px solid #334155; }
+  @media (max-width: 500px) { .linea-inner { grid-template-columns: 1fr; } }
+  .linea-img { background: #0f172a; border-radius: 8px; overflow: hidden;
+               aspect-ratio: 1/1; }
+  .linea-img img { width: 100%; height: 100%; object-fit: cover; }
+  .linea-img .vacio { display: flex; align-items: center; justify-content: center;
+                      color: #475569; font-size: 40px; height: 100%; }
+  .linea-info h3 { margin: 0 0 8px; color: #f8fafc; font-size: 16px; }
+  .linea-info p { margin: 0 0 14px; color: #cbd5e1; font-size: 13px;
+                  line-height: 1.5; white-space: pre-line; }
+  .colores-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+                    color: #94a3b8; font-weight: 700; margin-bottom: 8px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 5px;
+          background: #0f172a; padding: 4px 10px 4px 4px; border-radius: 20px;
+          border: 1px solid #334155; font-size: 11px; color: #cbd5e1; }
+  .chip-circulo { width: 16px; height: 16px; border-radius: 50%;
+                  border: 1px solid #64748b; }
+
+  .sin-lineas { color: #64748b; font-style: italic; padding: 20px;
+                text-align: center; background: #1e293b; border-radius: 12px; }
+
+  /* WhatsApp */
+  .whatsapp-box { text-align: center; margin: 40px 0; }
+  .btn-wa { display: inline-flex; align-items: center; gap: 8px;
+            background: #25d366; color: #fff; padding: 14px 28px;
+            border-radius: 30px; text-decoration: none; font-weight: 700;
+            font-size: 15px; }
+  .btn-wa:hover { opacity: 0.9; }
+
+  footer { text-align: center; color: #475569; font-size: 12px;
+           margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e293b; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img src="assets/LogoAluzeClaro.png" alt="Aluze" class="logo-img">
+    <a href="../../catalogo.html" class="volver">← Volver al catálogo</a>
+  </div>
+
+  <div class="detalle">
+    <div>
+      
+        <div class="carrusel">
+          <div class="slides"><div class="slide activo" data-slide="0"><img src="../../catalogo/imagenes/sheer_elegance/01.webp" alt="Sheer Elegance - Foto 1"></div><div class="slide " data-slide="1"><img src="../../catalogo/imagenes/sheer_elegance/02.webp" alt="Sheer Elegance - Foto 2"></div><div class="slide " data-slide="2"><img src="../../catalogo/imagenes/sheer_elegance/03.webp" alt="Sheer Elegance - Foto 3"></div></div>
+          <button class="nav prev" onclick="cambiarSlide(-1)">‹</button>
+          <button class="nav next" onclick="cambiarSlide(1)">›</button>
+          <div class="puntos"><span class="punto activo" onclick="irASlide(0)"></span><span class="punto " onclick="irASlide(1)"></span><span class="punto " onclick="irASlide(2)"></span></div>
+        </div>
+    </div>
+    <div class="info">
+      <h1>Sheer Elegance</h1>
+      <div class="descripcion">Persianas con franjas superpuesta (una franja opaca y otra traslucida)</div>
+      
+        <div class="video-box">
+          <video controls preload="none" poster="">
+            <source src="../../catalogo/videos/sheer_elegance.mp4" type="video/mp4">
+          </video>
+        </div>
+    </div>
+  </div>
+
+  <h2 class="seccion-titulo">Líneas disponibles</h2>
+  <p class="sin-lineas">Este modelo aún no tiene líneas definidas.</p>
+  
+
+  <div class="whatsapp-box">
+    <a class="btn-wa" href="https://wa.me/?text=Hola,%20me%20interesa%20el%20modelo%20Sheer Elegance" target="_blank">
+      💬 Consultar por WhatsApp
+    </a>
+  </div>
+
+  <footer>Persianas Aluze · Catálogo generado automáticamente</footer>
+</div>
+
+<script>
+  // Carrusel
+  let slideActual = 0;
+  const slides = document.querySelectorAll('.slide');
+  const puntos = document.querySelectorAll('.punto');
+
+  function mostrarSlide(n) {
+    if (slides.length === 0) return;
+    slideActual = (n + slides.length) % slides.length;
+    slides.forEach((s, i) => s.classList.toggle('activo', i === slideActual));
+    puntos.forEach((p, i) => p.classList.toggle('activo', i === slideActual));
+  }
+
+  function cambiarSlide(dir) { mostrarSlide(slideActual + dir); }
+  function irASlide(n) { mostrarSlide(n); }
+
+  // Líneas
+  function cambiarLinea(n) {
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('activo', i === n));
+    document.querySelectorAll('.linea').forEach((l, i) => l.classList.toggle('activo', i === n));
+  }
+</script>
+</body>
+</html>

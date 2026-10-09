@@ -1,0 +1,1 @@
+# Marca "catalogo" como paquete de Python.

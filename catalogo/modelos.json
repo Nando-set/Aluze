@@ -1,0 +1,15 @@
+[
+  {
+    "id": "sheer_elegance",
+    "nombre": "Sheer Elegance",
+    "categoria": "interior",
+    "descripcion": "Persianas con franjas superpuesta (una franja opaca y otra traslucida)",
+    "imagenes": [
+      "catalogo/imagenes/sheer_elegance/01.webp",
+      "catalogo/imagenes/sheer_elegance/02.webp",
+      "catalogo/imagenes/sheer_elegance/03.webp"
+    ],
+    "video": "catalogo/videos/sheer_elegance.mp4",
+    "lineas": []
+  }
+]

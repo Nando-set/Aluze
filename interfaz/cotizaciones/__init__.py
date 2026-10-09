@@ -1,0 +1,1 @@
+# Marca "cotizaciones" como paquete de Python.

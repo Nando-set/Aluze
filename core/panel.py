@@ -135,6 +135,13 @@ def regenerar_index():
     {logo_html}
     <h1>Panel de Cotizaciones</h1>
     <p>Persianas &amp; Decoración · Actualizado el {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+    <div class="top-nav" style="margin-top: 14px;">
+      <a href="catalogo.html" style="display: inline-block; padding: 10px 22px;
+         border-radius: 10px; background: #973359; color: #fff;
+         text-decoration: none; font-weight: 700; font-size: 14px;">
+        🛍️ Ver catálogo de productos
+      </a>
+    </div>
     <div class="contador">
       <div class="stat"><span class="num">{total}</span><span class="lbl">Total</span></div>
       <div class="stat destacado"><span class="num">{esta_semana}</span><span class="lbl">Esta semana</span></div>

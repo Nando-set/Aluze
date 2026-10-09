@@ -1,0 +1,22 @@
+[
+  {
+    "id": "interior",
+    "nombre": "Persianas de interior",
+    "emoji": "🏠"
+  },
+  {
+    "id": "exterior",
+    "nombre": "Persianas de exterior",
+    "emoji": "🌤️"
+  },
+  {
+    "id": "cortinas",
+    "nombre": "Cortinas",
+    "emoji": "🪟"
+  },
+  {
+    "id": "otros",
+    "nombre": "Otros",
+    "emoji": "📦"
+  }
+]

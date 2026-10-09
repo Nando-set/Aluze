@@ -39,3 +39,13 @@ COLOR_FONDO_OSCURO = "#0f172a"
 COLOR_SIDEBAR = "#1e293b"
 COLOR_ROSA_ALUZE = "#973359"
 COLOR_VERDE = "#34d399"
+# ============================================================
+# CATÁLOGO
+# ============================================================
+CARPETA_CATALOGO = BASE_DIR / "catalogo"
+CATALOGO_IMAGENES = CARPETA_CATALOGO / "imagenes"
+CATALOGO_VIDEOS = CARPETA_CATALOGO / "videos"
+CATALOGO_PAGINAS = CARPETA_CATALOGO / "paginas"
+CATALOGO_CATEGORIAS = CARPETA_CATALOGO / "categorias.json"
+CATALOGO_MODELOS = CARPETA_CATALOGO / "modelos.json"
+CATALOGO_INDEX = BASE_DIR / "catalogo.html"
