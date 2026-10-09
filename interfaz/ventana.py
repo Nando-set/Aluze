@@ -1,13 +1,15 @@
 """
 Ventana principal de Aluze.
 Estructura: logo arriba + pestañas + contenido + botón global abajo.
+Migrado a customtkinter.
 """
 import shutil
 import re
 import tkinter as tk
-from tkinter import messagebox, ttk, filedialog
+from tkinter import messagebox, filedialog, colorchooser, ttk
 from pathlib import Path
 from datetime import datetime
+import customtkinter as ctk
 
 from config import (
     CARPETA_COTIZACIONES, CARPETA_ASSETS,
@@ -43,6 +45,22 @@ from interfaz.cotizaciones.ventana_links import VentanaLinks
 from interfaz.catalogo import panel as cat_panel
 
 
+# ============================================================
+# COLORES
+# ============================================================
+COLOR_FONDO = "#0f172a"
+COLOR_PANEL = "#1e293b"
+COLOR_TEXTO = "#f8fafc"
+COLOR_TEXTO_SEC = "#94a3b8"
+COLOR_ROSA = "#973359"
+COLOR_ACENTO_HOVER = "#7f2a4a"
+
+# Botones estilo IA
+BTN_FG = "#f8fafc"
+BTN_TXT = "#334155"
+BTN_HOVER = "#e2e8f0"
+
+
 def inicializar_estructura():
     """Crea carpetas y copia logos a assets."""
     CARPETA_COTIZACIONES.mkdir(exist_ok=True)
@@ -65,66 +83,64 @@ class AppAluze:
         self.root.title("Aluze - Sistema de Gestión")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 650)
-        self.root.configure(bg="#0f172a")
 
         inicializar_estructura()
-
-        style = ttk.Style()
-        style.theme_use('clam')
 
         # ============================================================
         # CONTENEDOR PRINCIPAL
         # ============================================================
-        self.contenedor = tk.Frame(root, bg="#0f172a")
+        self.contenedor = ctk.CTkFrame(root, fg_color=COLOR_FONDO, corner_radius=0)
         self.contenedor.pack(fill=tk.BOTH, expand=True)
 
         # ============================================================
         # BARRA DE PESTAÑAS
         # ============================================================
-        self.tab_bar = tk.Frame(self.contenedor, bg="#0f172a", pady=10)
-        self.tab_bar.pack(side=tk.TOP, fill=tk.X)
+        self.tab_bar = ctk.CTkFrame(self.contenedor, fg_color=COLOR_FONDO, corner_radius=0)
+        self.tab_bar.pack(side=tk.TOP, fill=tk.X, padx=20, pady=(15, 8))
 
         self.tab_activa = tk.StringVar(value="cotizaciones")
         self.botones_tab = {}
+
         self._crear_tab_button("cotizaciones", "📝  Cotizaciones")
         self._crear_tab_button("catalogo", "🛍️  Catálogo")
 
         # ============================================================
         # ÁREA DE CONTENIDO
         # ============================================================
-        self.area_contenido = tk.Frame(self.contenedor, bg="#0f172a")
+        self.area_contenido = ctk.CTkFrame(self.contenedor, fg_color=COLOR_FONDO, corner_radius=0)
         self.area_contenido.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.vista_cotizaciones = tk.Frame(self.area_contenido, bg="#0f172a")
-        self.vista_catalogo = tk.Frame(self.area_contenido, bg="#0f172a")
+        self.vista_cotizaciones = ctk.CTkFrame(self.area_contenido, fg_color=COLOR_FONDO, corner_radius=0)
+        self.vista_catalogo = ctk.CTkFrame(self.area_contenido, fg_color=COLOR_FONDO, corner_radius=0)
 
         # ============================================================
-        # BARRA INFERIOR
+        # BARRA INFERIOR (botón Subir TODO)
         # ============================================================
-        self.barra_inferior = tk.Frame(self.contenedor, bg="#0f172a", pady=8)
-        self.barra_inferior.pack(side=tk.BOTTOM, fill=tk.X)
+        self.barra_inferior = ctk.CTkFrame(self.contenedor, fg_color=COLOR_FONDO, corner_radius=0)
+        self.barra_inferior.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=(8, 15))
 
-        btn_subir = tk.Button(
+        btn_subir = ctk.CTkButton(
             self.barra_inferior,
             text="☁️  Subir TODO a GitHub",
-            bg="#16a34a", fg="white",
-            font=("Segoe UI", 11, "bold"),
-            relief=tk.FLAT, cursor="hand2",
-            activebackground="#15803d", activeforeground="white",
-            borderwidth=0, highlightthickness=0,
             command=self.accion_subir_github,
+            fg_color=BTN_FG,
+            text_color=BTN_TXT,
+            hover_color=BTN_HOVER,
+            corner_radius=12,
+            height=44,
+            font=("Segoe UI", 13, "bold"),
         )
-        btn_subir.pack(fill=tk.X, padx=20, ipady=10)
-        self._aplicar_hover(btn_subir, "#16a34a", "#15803d")
+        btn_subir.pack(fill=tk.X)
 
         # ============================================================
         # VISTA DE COTIZACIONES
         # ============================================================
-        self.sidebar = tk.Frame(self.vista_cotizaciones, bg="#1e293b", width=450, padx=15, pady=15)
+        self.sidebar = ctk.CTkFrame(self.vista_cotizaciones, fg_color=COLOR_PANEL,
+                                     width=450, corner_radius=0)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         self.sidebar.pack_propagate(False)
 
-        self.main_panel = tk.Frame(self.vista_cotizaciones, bg="#0f172a", padx=15, pady=15)
+        self.main_panel = ctk.CTkFrame(self.vista_cotizaciones, fg_color=COLOR_FONDO, corner_radius=0)
         self.main_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         crear_formulario(self)
@@ -147,18 +163,19 @@ class AppAluze:
     # SISTEMA DE PESTAÑAS
     # ============================================================
     def _crear_tab_button(self, nombre, texto):
-        btn = tk.Button(
+        btn = ctk.CTkButton(
             self.tab_bar,
             text=texto,
-            bg="#1e293b", fg="#94a3b8",
-            font=("Segoe UI", 11, "bold"),
-            relief=tk.FLAT, cursor="hand2",
-            activebackground="#334155", activeforeground="#f8fafc",
-            borderwidth=0, highlightthickness=0,
-            padx=20, pady=10,
             command=lambda n=nombre: self._cambiar_tab(n),
+            fg_color=COLOR_PANEL,
+            text_color=COLOR_TEXTO_SEC,
+            hover_color="#334155",
+            corner_radius=10,
+            height=40,
+            width=180,
+            font=("Segoe UI", 12, "bold"),
         )
-        btn.pack(side=tk.LEFT, padx=(20, 6))
+        btn.pack(side=tk.LEFT, padx=(0, 8))
         self.botones_tab[nombre] = btn
 
     def _cambiar_tab(self, nombre):
@@ -168,30 +185,21 @@ class AppAluze:
 
         for n, btn in self.botones_tab.items():
             if n == nombre:
-                btn.configure(bg="#973359", fg="#ffffff",
-                              activebackground="#7f2a4a")
+                btn.configure(fg_color=COLOR_ROSA, text_color="#ffffff",
+                              hover_color=COLOR_ACENTO_HOVER)
             else:
-                btn.configure(bg="#1e293b", fg="#94a3b8",
-                              activebackground="#334155")
+                btn.configure(fg_color=COLOR_PANEL, text_color=COLOR_TEXTO_SEC,
+                              hover_color="#334155")
 
         if nombre == "cotizaciones":
             self.vista_cotizaciones.pack(fill=tk.BOTH, expand=True)
         elif nombre == "catalogo":
             self.vista_catalogo.pack(fill=tk.BOTH, expand=True)
 
-    # ============================================================
-    # UTILIDAD: hover
-    # ============================================================
-    @staticmethod
-    def _aplicar_hover(boton, color_normal, hover):
-        boton.bind("<Enter>", lambda e: boton.configure(bg=hover))
-        boton.bind("<Leave>", lambda e: boton.configure(bg=color_normal))
-
     # ========================================================
-    # GUARDAR COTIZACIÓN (con campos nuevos)
+    # GUARDAR COTIZACIÓN
     # ========================================================
     def guardar_cotizacion(self):
-        # Leer todos los campos
         cliente = self.entries["Nombre del Cliente"].get().strip()
         domicilio = self.entries["Domicilio"].get().strip()
         telefono = self.entries["Teléfono Celular"].get().strip()
@@ -203,12 +211,10 @@ class AppAluze:
         notas_cliente = self.entries["NotasCliente"].get("1.0", tk.END).strip()
         notas_internas = self.entries["NotasInternas"].get("1.0", tk.END).strip()
 
-        # Validaciones
         if not cliente or not telefono:
             messagebox.showerror("Error", "El nombre del cliente y el teléfono son obligatorios.")
             return
 
-        # Validar formato de fecha pautada si se puso
         if fecha_pautada:
             try:
                 datetime.strptime(fecha_pautada, "%d/%m/%Y")
@@ -218,7 +224,6 @@ class AppAluze:
                                      "Ejemplo: 15/10/2026")
                 return
 
-        # Validar hora si se puso (solo si hay fecha)
         if hora_pautada and not fecha_pautada:
             messagebox.showerror("Error", "Si pones hora, también debes poner fecha pautada.")
             return
@@ -236,7 +241,6 @@ class AppAluze:
             )
             link_individual = f"{URL_BASE}{ruta_relativa}"
 
-            # Fila completa (14 columnas)
             fila = [
                 id_reg, fecha, cliente, domicilio, telefono,
                 concepto, cotizacion, monto,
@@ -264,25 +268,23 @@ class AppAluze:
 
     def limpiar_formulario(self):
         for label, widget in self.entries.items():
-            if isinstance(widget, tk.Entry):
+            if isinstance(widget, ctk.CTkEntry):
                 widget.delete(0, tk.END)
             else:
                 widget.delete("1.0", tk.END)
 
     # ========================================================
-    # EDITAR COTIZACIÓN (modal)
+    # EDITAR COTIZACIÓN
     # ========================================================
     def editar_cotizacion(self, id_registro):
-        """Abre un modal para editar la cotización."""
         registro = buscar_registro_por_id(id_registro)
         if not registro:
             messagebox.showerror("Error", "No se encontró el registro.")
             return
-
         VentanaEditar(self, id_registro, registro)
 
     # ========================================================
-    # ELIMINAR COTIZACIÓN
+    # ELIMINAR
     # ========================================================
     def eliminar_registro(self, id_eliminar):
         if not messagebox.askyesno("Confirmar", "¿Eliminar esta cotización del registro?"):
@@ -452,7 +454,6 @@ class AppAluze:
         }
 
         if self.modelo_seleccionado_id:
-            # Conservar imágenes, video y líneas existentes
             existente = buscar_modelo(self.modelo_seleccionado_id)
             if existente:
                 modelo["imagenes"] = existente.get("imagenes", [])
@@ -500,6 +501,7 @@ class AppAluze:
 
     def accion_ver_catalogo(self):
         from config import CATALOGO_INDEX
+        import webbrowser
         if CATALOGO_INDEX.exists():
             webbrowser.open(CATALOGO_INDEX.as_uri())
         else:
@@ -885,7 +887,7 @@ class AppAluze:
 # ============================================================
 # MODAL DE EDICIÓN
 # ============================================================
-class VentanaEditar(tk.Toplevel):
+class VentanaEditar(ctk.CTkToplevel):
     """Modal para editar una cotización existente."""
 
     def __init__(self, parent_app, id_registro, registro):
@@ -895,43 +897,40 @@ class VentanaEditar(tk.Toplevel):
         self.registro = registro
 
         self.title(f"✏️ Editar cotización - {registro[2]}")
-        self.configure(bg="#1e293b")
         self.geometry("700x750")
         self.minsize(600, 600)
         self.transient(parent_app.root)
         self.grab_set()
 
-        # Scroll
-        canvas = tk.Canvas(self, bg="#1e293b", highlightthickness=0, bd=0)
-        scroll = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
-        frame = tk.Frame(canvas, bg="#1e293b")
-        frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=frame, anchor="nw")
-        canvas.configure(yscrollcommand=scroll.set)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        # ScrollableFrame nativo
+        frame = ctk.CTkScrollableFrame(self, fg_color=COLOR_PANEL, corner_radius=0,
+                                        scrollbar_button_color="#334155")
+        frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
 
-        # Título
-        tk.Label(frame, text="EDITAR COTIZACIÓN", bg="#1e293b", fg="#f8fafc",
-                 font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(15, 15), padx=20)
+        ctk.CTkLabel(frame, text="EDITAR COTIZACIÓN",
+                     text_color=COLOR_TEXTO,
+                     font=("Segoe UI", 16, "bold"),
+                     anchor="w").pack(fill=tk.X, padx=20, pady=(15, 15))
 
         self.entries_edit = {}
 
         def campo(label, valor, multiline=False, height=3):
-            tk.Label(frame, text=label, bg="#1e293b", fg="#94a3b8",
-                     font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=20, pady=(8, 2))
+            ctk.CTkLabel(frame, text=label, text_color=COLOR_TEXTO_SEC,
+                         font=("Segoe UI", 10, "bold"),
+                         anchor="w").pack(fill=tk.X, padx=20, pady=(8, 3))
             if multiline:
-                txt = tk.Text(frame, height=height, font=("Segoe UI", 10),
-                              bg="#334155", fg="#f8fafc", insertbackground="white",
-                              relief=tk.FLAT, borderwidth=0)
+                txt = ctk.CTkTextbox(frame, height=height * 22,
+                                      font=("Segoe UI", 11),
+                                      fg_color="#334155", text_color=COLOR_TEXTO,
+                                      border_width=0, corner_radius=8)
                 txt.pack(fill=tk.X, padx=20)
                 txt.insert("1.0", valor)
                 return txt
             else:
-                ent = tk.Entry(frame, font=("Segoe UI", 10), bg="#334155",
-                               fg="#f8fafc", insertbackground="white",
-                               relief=tk.FLAT, borderwidth=0)
-                ent.pack(fill=tk.X, padx=20, ipady=5)
+                ent = ctk.CTkEntry(frame, font=("Segoe UI", 11),
+                                    fg_color="#334155", text_color=COLOR_TEXTO,
+                                    border_width=0, corner_radius=8, height=36)
+                ent.pack(fill=tk.X, padx=20)
                 ent.insert(0, valor)
                 return ent
 
@@ -942,40 +941,48 @@ class VentanaEditar(tk.Toplevel):
         self.entries_edit["cotizacion"] = campo("Detalles de Cotización", registro[6], multiline=True, height=4)
         self.entries_edit["monto"] = campo("Monto Aproximado", registro[7])
 
-        # Visita pautada (en 2 columnas)
-        tk.Label(frame, text="📅 VISITA PAUTADA (opcional)", bg="#1e293b",
-                 fg="#973359", font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=20, pady=(14, 4))
+        # Visita pautada
+        ctk.CTkLabel(frame, text="📅 VISITA PAUTADA (opcional)",
+                     text_color=COLOR_ROSA,
+                     font=("Segoe UI", 10, "bold"),
+                     anchor="w").pack(fill=tk.X, padx=20, pady=(14, 6))
 
-        frame_fecha = tk.Frame(frame, bg="#1e293b")
+        frame_fecha = ctk.CTkFrame(frame, fg_color=COLOR_PANEL, corner_radius=0)
         frame_fecha.pack(fill=tk.X, padx=20)
         frame_fecha.columnconfigure(0, weight=3)
         frame_fecha.columnconfigure(1, weight=2)
 
-        col_f = tk.Frame(frame_fecha, bg="#1e293b")
+        col_f = ctk.CTkFrame(frame_fecha, fg_color=COLOR_PANEL, corner_radius=0)
         col_f.grid(row=0, column=0, sticky="ew", padx=(0, 4))
-        tk.Label(col_f, text="Fecha (dd/mm/aaaa)", bg="#1e293b",
-                 fg="#94a3b8", font=("Segoe UI", 8, "bold")).pack(anchor="w")
-        e_f = tk.Entry(col_f, font=("Segoe UI", 10), bg="#334155",
-                       fg="#f8fafc", insertbackground="white",
-                       relief=tk.FLAT, borderwidth=0)
-        e_f.pack(fill=tk.X, ipady=5)
+        ctk.CTkLabel(col_f, text="Fecha (dd/mm/aaaa)",
+                     text_color=COLOR_TEXTO_SEC,
+                     font=("Segoe UI", 9, "bold"),
+                     anchor="w").pack(fill=tk.X, pady=(0, 3))
+        e_f = ctk.CTkEntry(col_f, font=("Segoe UI", 11),
+                            fg_color="#334155", text_color=COLOR_TEXTO,
+                            border_width=0, corner_radius=8, height=36)
+        e_f.pack(fill=tk.X)
         e_f.insert(0, registro[8] if len(registro) > 8 else "")
         self.entries_edit["fecha_pautada"] = e_f
 
-        col_h = tk.Frame(frame_fecha, bg="#1e293b")
+        col_h = ctk.CTkFrame(frame_fecha, fg_color=COLOR_PANEL, corner_radius=0)
         col_h.grid(row=0, column=1, sticky="ew", padx=(4, 0))
-        tk.Label(col_h, text="Hora (HH:MM)", bg="#1e293b",
-                 fg="#94a3b8", font=("Segoe UI", 8, "bold")).pack(anchor="w")
-        e_h = tk.Entry(col_h, font=("Segoe UI", 10), bg="#334155",
-                       fg="#f8fafc", insertbackground="white",
-                       relief=tk.FLAT, borderwidth=0)
-        e_h.pack(fill=tk.X, ipady=5)
+        ctk.CTkLabel(col_h, text="Hora (HH:MM)",
+                     text_color=COLOR_TEXTO_SEC,
+                     font=("Segoe UI", 9, "bold"),
+                     anchor="w").pack(fill=tk.X, pady=(0, 3))
+        e_h = ctk.CTkEntry(col_h, font=("Segoe UI", 11),
+                            fg_color="#334155", text_color=COLOR_TEXTO,
+                            border_width=0, corner_radius=8, height=36)
+        e_h.pack(fill=tk.X)
         e_h.insert(0, registro[9] if len(registro) > 9 else "")
         self.entries_edit["hora_pautada"] = e_h
 
         # Notas
-        tk.Label(frame, text="📝 NOTAS", bg="#1e293b",
-                 fg="#973359", font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=20, pady=(14, 4))
+        ctk.CTkLabel(frame, text="📝 NOTAS",
+                     text_color=COLOR_ROSA,
+                     font=("Segoe UI", 10, "bold"),
+                     anchor="w").pack(fill=tk.X, padx=20, pady=(14, 6))
 
         self.entries_edit["notas_cliente"] = campo("Notas del cliente",
                                                      registro[10] if len(registro) > 10 else "",
@@ -985,26 +992,29 @@ class VentanaEditar(tk.Toplevel):
                                                       multiline=True, height=2)
 
         # Botones
-        frame_btns = tk.Frame(frame, bg="#1e293b")
+        frame_btns = ctk.CTkFrame(frame, fg_color=COLOR_PANEL, corner_radius=0)
         frame_btns.pack(fill=tk.X, padx=20, pady=20)
 
-        tk.Button(frame_btns, text="Cancelar", bg="#334155", fg="white",
-                  font=("Segoe UI", 10), relief=tk.FLAT, cursor="hand2",
-                  borderwidth=0, highlightthickness=0,
-                  command=self.destroy).pack(side=tk.RIGHT, padx=(6, 0), ipady=8, ipadx=16)
+        ctk.CTkButton(frame_btns, text="Cancelar",
+                      command=self.destroy,
+                      fg_color="#334155", text_color=COLOR_TEXTO,
+                      hover_color="#475569",
+                      corner_radius=10, height=40, width=120,
+                      font=("Segoe UI", 11, "bold")).pack(side=tk.RIGHT, padx=(6, 0))
 
-        tk.Button(frame_btns, text="💾  Guardar cambios", bg="#16a34a", fg="white",
-                  font=("Segoe UI", 10, "bold"), relief=tk.FLAT, cursor="hand2",
-                  borderwidth=0, highlightthickness=0,
-                  command=self._guardar).pack(side=tk.RIGHT, ipady=8, ipadx=16)
+        ctk.CTkButton(frame_btns, text="💾  Guardar cambios",
+                      command=self._guardar,
+                      fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                      corner_radius=10, height=40, width=160,
+                      font=("Segoe UI", 11, "bold")).pack(side=tk.RIGHT, padx=(6, 0))
 
-        tk.Button(frame_btns, text="☁️  Guardar y subir", bg="#0ea5e9", fg="white",
-                  font=("Segoe UI", 10, "bold"), relief=tk.FLAT, cursor="hand2",
-                  borderwidth=0, highlightthickness=0,
-                  command=lambda: self._guardar(subir=True)).pack(side=tk.RIGHT, padx=(0, 6), ipady=8, ipadx=16)
+        ctk.CTkButton(frame_btns, text="☁️  Guardar y subir",
+                      command=lambda: self._guardar(subir=True),
+                      fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                      corner_radius=10, height=40, width=160,
+                      font=("Segoe UI", 11, "bold")).pack(side=tk.RIGHT)
 
     def _guardar(self, subir=False):
-        # Leer valores
         cliente = self.entries_edit["cliente"].get().strip()
         domicilio = self.entries_edit["domicilio"].get().strip()
         telefono = self.entries_edit["telefono"].get().strip()
@@ -1029,7 +1039,6 @@ class VentanaEditar(tk.Toplevel):
                                      parent=self)
                 return
 
-        # Regenerar tarjeta HTML
         reg = self.registro
         id_reg = reg[0]
         fecha_creacion = reg[1]
@@ -1071,18 +1080,14 @@ class VentanaEditar(tk.Toplevel):
 
 
 # ============================================================
-# DIÁLOGO PARA AÑADIR COLOR
+# DIÁLOGO DE COLOR
 # ============================================================
-from tkinter import colorchooser
-
-
-class _DialogoColor(tk.Toplevel):
-    """Diálogo simple para añadir un color: nombre + selector."""
+class _DialogoColor(ctk.CTkToplevel):
+    """Diálogo para añadir un color: nombre + selector."""
 
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Añadir color")
-        self.configure(bg="#1e293b")
         self.geometry("400x260")
         self.resizable(False, False)
         self.transient(parent)
@@ -1091,43 +1096,52 @@ class _DialogoColor(tk.Toplevel):
         self.resultado = None
         self.color_actual = "#FFFFFF"
 
-        tk.Label(self, text="Nombre del color", bg="#1e293b", fg="#f8fafc",
-                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=20, pady=(20, 4))
+        ctk.CTkLabel(self, text="Nombre del color",
+                     text_color=COLOR_TEXTO,
+                     font=("Segoe UI", 11, "bold"),
+                     anchor="w").pack(fill=tk.X, padx=20, pady=(20, 4))
 
         self.var_nombre = tk.StringVar()
-        entry = tk.Entry(self, textvariable=self.var_nombre, font=("Segoe UI", 11),
-                         bg="#334155", fg="#f8fafc", insertbackground="white",
-                         relief=tk.FLAT, borderwidth=0)
-        entry.pack(fill=tk.X, padx=20, ipady=6)
+        entry = ctk.CTkEntry(self, textvariable=self.var_nombre,
+                              font=("Segoe UI", 11),
+                              fg_color="#334155", text_color=COLOR_TEXTO,
+                              border_width=0, corner_radius=8, height=36)
+        entry.pack(fill=tk.X, padx=20)
         entry.focus()
 
-        tk.Label(self, text="Color", bg="#1e293b", fg="#f8fafc",
-                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=20, pady=(16, 4))
+        ctk.CTkLabel(self, text="Color",
+                     text_color=COLOR_TEXTO,
+                     font=("Segoe UI", 11, "bold"),
+                     anchor="w").pack(fill=tk.X, padx=20, pady=(16, 4))
 
-        frame_color = tk.Frame(self, bg="#1e293b")
+        frame_color = ctk.CTkFrame(self, fg_color=COLOR_PANEL, corner_radius=0)
         frame_color.pack(fill=tk.X, padx=20)
 
         self.canvas_color = tk.Canvas(frame_color, width=60, height=40,
                                        bg=self.color_actual, highlightthickness=0)
         self.canvas_color.pack(side=tk.LEFT)
 
-        tk.Button(frame_color, text="🎨  Elegir color",
-                  bg="#0ea5e9", fg="white", font=("Segoe UI", 10, "bold"),
-                  relief=tk.FLAT, cursor="hand2", borderwidth=0, highlightthickness=0,
-                  command=self._elegir_color).pack(side=tk.LEFT, padx=(10, 0), ipady=8, ipadx=10)
+        ctk.CTkButton(frame_color, text="🎨  Elegir color",
+                      command=self._elegir_color,
+                      fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                      corner_radius=10, height=40, width=140,
+                      font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT, padx=(10, 0))
 
-        frame_btns = tk.Frame(self, bg="#1e293b")
+        frame_btns = ctk.CTkFrame(self, fg_color=COLOR_PANEL, corner_radius=0)
         frame_btns.pack(fill=tk.X, padx=20, pady=20)
 
-        tk.Button(frame_btns, text="Cancelar", bg="#334155", fg="white",
-                  font=("Segoe UI", 10), relief=tk.FLAT, cursor="hand2",
-                  borderwidth=0, highlightthickness=0,
-                  command=self.destroy).pack(side=tk.RIGHT, padx=(6, 0), ipady=6, ipadx=12)
+        ctk.CTkButton(frame_btns, text="Cancelar",
+                      command=self.destroy,
+                      fg_color="#334155", text_color=COLOR_TEXTO,
+                      hover_color="#475569",
+                      corner_radius=10, height=36, width=100,
+                      font=("Segoe UI", 10, "bold")).pack(side=tk.RIGHT, padx=(6, 0))
 
-        tk.Button(frame_btns, text="Añadir", bg="#16a34a", fg="white",
-                  font=("Segoe UI", 10, "bold"), relief=tk.FLAT, cursor="hand2",
-                  borderwidth=0, highlightthickness=0,
-                  command=self._aceptar).pack(side=tk.RIGHT, ipady=6, ipadx=12)
+        ctk.CTkButton(frame_btns, text="Añadir",
+                      command=self._aceptar,
+                      fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                      corner_radius=10, height=36, width=100,
+                      font=("Segoe UI", 10, "bold")).pack(side=tk.RIGHT)
 
     def _elegir_color(self):
         color = colorchooser.askcolor(color=self.color_actual, parent=self)

@@ -1,12 +1,37 @@
 """
 Construcción del formulario lateral (sidebar izquierdo).
 Layout: logo fijo arriba + campos scrolleables + botones fijos abajo.
+Migrado a customtkinter para botones y widgets modernos.
 """
 import tkinter as tk
 from tkinter import ttk
+import customtkinter as ctk
 import webbrowser
 
 from config import LOGO_PNG_CLARO, URL_BASE
+
+
+# ============================================================
+# COLORES DEL TEMA
+# ============================================================
+COLOR_FONDO = "#1e293b"           # fondo del sidebar
+COLOR_TEXTO = "#f8fafc"           # texto principal
+COLOR_TEXTO_SEC = "#94a3b8"       # texto secundario (labels)
+COLOR_INPUT = "#334155"           # fondo de los inputs
+COLOR_ACENTO = "#973359"          # rosa de Aluze
+
+# Botones
+BTN_PRINCIPAL_FG = "#f8fafc"
+BTN_PRINCIPAL_TXT = "#334155"
+BTN_PRINCIPAL_HOVER = "#e2e8f0"
+
+BTN_SECUNDARIO_FG = "#f8fafc"
+BTN_SECUNDARIO_TXT = "#334155"
+BTN_SECUNDARIO_HOVER = "#e2e8f0"
+
+BTN_PELIGRO_FG = "#f1f5f9"
+BTN_PELIGRO_TXT = "#b91c1c"
+BTN_PELIGRO_HOVER = "#fee2e2"
 
 
 def crear_formulario(app):
@@ -19,7 +44,7 @@ def crear_formulario(app):
     # ============================================================
     # CABECERA FIJA (logo + título)
     # ============================================================
-    header = tk.Frame(app.sidebar, bg="#1e293b")
+    header = ctk.CTkFrame(app.sidebar, fg_color=COLOR_FONDO, corner_radius=0)
     header.pack(side=tk.TOP, fill=tk.X)
 
     logo_mostrado = False
@@ -29,149 +54,195 @@ def crear_formulario(app):
             factor = max(1, app.logo_img.width() // 240)
             if factor > 1:
                 app.logo_img = app.logo_img.subsample(factor, factor)
-            tk.Label(header, image=app.logo_img, bg="#1e293b").pack(pady=(0, 6))
+            ctk.CTkLabel(header, image=app.logo_img, text="",
+                         fg_color=COLOR_FONDO).pack(pady=(0, 6))
             logo_mostrado = True
         except Exception as e:
             print(f"Error cargando PNG claro: {e}")
     if not logo_mostrado:
-        tk.Label(header, text="LogoAluzeClaro.png no encontrado",
-                 bg="#1e293b", fg="#fbbf24",
-                 font=("Segoe UI", 8, "italic")).pack(pady=(0, 6))
+        ctk.CTkLabel(header, text="LogoAluzeClaro.png no encontrado",
+                     text_color="#fbbf24",
+                     font=("Segoe UI", 8, "italic")).pack(pady=(0, 6))
 
-    tk.Label(header, text="NUEVA COTIZACIÓN", bg="#1e293b",
-             fg="#f8fafc", font=("Segoe UI", 12, "bold")).pack(pady=(0, 8))
+    ctk.CTkLabel(header, text="NUEVA COTIZACIÓN",
+                 text_color=COLOR_TEXTO,
+                 font=("Segoe UI", 14, "bold")).pack(pady=(0, 10))
 
     # ============================================================
     # PIE FIJO (botones de acción)
     # ============================================================
-    footer = tk.Frame(app.sidebar, bg="#1e293b")
-    footer.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
+    footer = ctk.CTkFrame(app.sidebar, fg_color=COLOR_FONDO, corner_radius=0)
+    footer.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0), padx=10)
 
-    def boton_principal(parent, texto, color, comando):
-        btn = tk.Button(parent, text=texto, bg=color, fg="white",
-                        font=("Segoe UI", 10, "bold"),
-                        relief=tk.FLAT, cursor="hand2",
-                        activebackground=color, activeforeground="white",
-                        borderwidth=0, highlightthickness=0,
-                        command=comando)
-        btn.pack(fill=tk.X, pady=(0, 6), ipady=9)
-        _aplicar_hover(btn, color)
-        return btn
+    # --- Botón principal ---
+    btn_generar = ctk.CTkButton(
+        footer,
+        text="✨  Generar cotización",
+        command=app.guardar_cotizacion,
+        fg_color=BTN_PRINCIPAL_FG,
+        text_color=BTN_PRINCIPAL_TXT,
+        hover_color=BTN_PRINCIPAL_HOVER,
+        corner_radius=12,
+        height=42,
+        font=("Segoe UI", 12, "bold"),
+    )
+    btn_generar.pack(fill=tk.X, pady=(0, 8))
 
-    def boton_par(parent, texto, color, comando):
-        row = tk.Frame(parent, bg="#1e293b")
-        row.pack(fill=tk.X, pady=(0, 6))
-        row.columnconfigure(0, weight=1)
-        row.columnconfigure(1, weight=1)
+    # --- Fila 1: Panel + Subir ---
+    fila1 = ctk.CTkFrame(footer, fg_color=COLOR_FONDO, corner_radius=0)
+    fila1.pack(fill=tk.X, pady=(0, 6))
+    fila1.columnconfigure(0, weight=1)
+    fila1.columnconfigure(1, weight=1)
 
-        btn1 = tk.Button(row, text=texto[0], bg=color[0], fg="white",
-                         font=("Segoe UI", 9, "bold"),
-                         relief=tk.FLAT, cursor="hand2",
-                         activebackground=color[0], activeforeground="white",
-                         borderwidth=0, highlightthickness=0,
-                         command=comando[0])
-        btn1.grid(row=0, column=0, sticky="ew", padx=(0, 3), ipady=8)
-        _aplicar_hover(btn1, color[0])
+    btn_panel = ctk.CTkButton(
+        fila1,
+        text="🌐  Panel",
+        command=lambda: webbrowser.open(URL_BASE),
+        fg_color=BTN_SECUNDARIO_FG,
+        text_color=BTN_SECUNDARIO_TXT,
+        hover_color=BTN_SECUNDARIO_HOVER,
+        corner_radius=10,
+        height=34,
+        font=("Segoe UI", 10, "bold"),
+    )
+    btn_panel.grid(row=0, column=0, sticky="ew", padx=(0, 3))
 
-        btn2 = tk.Button(row, text=texto[1], bg=color[1], fg="white",
-                         font=("Segoe UI", 9, "bold"),
-                         relief=tk.FLAT, cursor="hand2",
-                         activebackground=color[1], activeforeground="white",
-                         borderwidth=0, highlightthickness=0,
-                         command=comando[1])
-        btn2.grid(row=0, column=1, sticky="ew", padx=(3, 0), ipady=8)
-        _aplicar_hover(btn2, color[1])
-        return btn1, btn2
+    btn_subir = ctk.CTkButton(
+        fila1,
+        text="☁️  Subir",
+        command=app.accion_subir_github,
+        fg_color=BTN_SECUNDARIO_FG,
+        text_color=BTN_SECUNDARIO_TXT,
+        hover_color=BTN_SECUNDARIO_HOVER,
+        corner_radius=10,
+        height=34,
+        font=("Segoe UI", 10, "bold"),
+    )
+    btn_subir.grid(row=0, column=1, sticky="ew", padx=(3, 0))
 
-    boton_principal(footer, "✨  Generar cotización", "#973359",
-                    app.guardar_cotizacion)
+    # --- Fila 2: Actualizar + Regenerar ---
+    fila2 = ctk.CTkFrame(footer, fg_color=COLOR_FONDO, corner_radius=0)
+    fila2.pack(fill=tk.X, pady=(0, 6))
+    fila2.columnconfigure(0, weight=1)
+    fila2.columnconfigure(1, weight=1)
 
-    boton_par(footer,
-              ["🌐  Panel", "☁️  Subir"],
-              ["#0ea5e9", "#16a34a"],
-              [lambda: webbrowser.open(URL_BASE), app.accion_subir_github])
+    btn_actualizar = ctk.CTkButton(
+        fila2,
+        text="🔄  Actualizar",
+        command=app.accion_forzar_actualizacion,
+        fg_color=BTN_SECUNDARIO_FG,
+        text_color=BTN_SECUNDARIO_TXT,
+        hover_color=BTN_SECUNDARIO_HOVER,
+        corner_radius=10,
+        height=34,
+        font=("Segoe UI", 10, "bold"),
+    )
+    btn_actualizar.grid(row=0, column=0, sticky="ew", padx=(0, 3))
 
-    boton_par(footer,
-              ["🔄  Actualizar", "🔁  Regenerar"],
-              ["#7c3aed", "#0891b2"],
-              [app.accion_forzar_actualizacion, app.regenerar_todas_las_tarjetas])
+    btn_regenerar = ctk.CTkButton(
+        fila2,
+        text="🔁  Regenerar",
+        command=app.regenerar_todas_las_tarjetas,
+        fg_color=BTN_SECUNDARIO_FG,
+        text_color=BTN_SECUNDARIO_TXT,
+        hover_color=BTN_SECUNDARIO_HOVER,
+        corner_radius=10,
+        height=34,
+        font=("Segoe UI", 10, "bold"),
+    )
+    btn_regenerar.grid(row=0, column=1, sticky="ew", padx=(3, 0))
 
-    btn_borrar = tk.Button(footer, text="🗑️  Borrar todo",
-                           bg="#7f1d1d", fg="#fecaca",
-                           font=("Segoe UI", 9, "bold"),
-                           relief=tk.FLAT, cursor="hand2",
-                           activebackground="#991b1b", activeforeground="#fee2e2",
-                           borderwidth=0, highlightthickness=0,
-                           command=app.borrar_todo)
-    btn_borrar.pack(fill=tk.X, ipady=6)
-    _aplicar_hover(btn_borrar, "#7f1d1d", hover="#991b1b")
+    # --- Botón peligro ---
+    btn_borrar = ctk.CTkButton(
+        footer,
+        text="🗑️  Borrar todo",
+        command=app.borrar_todo,
+        fg_color=BTN_PELIGRO_FG,
+        text_color=BTN_PELIGRO_TXT,
+        hover_color=BTN_PELIGRO_HOVER,
+        corner_radius=10,
+        height=32,
+        font=("Segoe UI", 10, "bold"),
+    )
+    btn_borrar.pack(fill=tk.X, pady=(0, 4))
 
     # ============================================================
     # ZONA CENTRAL SCROLLABLE (campos del formulario)
     # ============================================================
-    cuerpo = tk.Frame(app.sidebar, bg="#1e293b")
+    cuerpo = ctk.CTkFrame(app.sidebar, fg_color=COLOR_FONDO, corner_radius=0)
     cuerpo.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(4, 4))
 
-    canvas = tk.Canvas(cuerpo, bg="#1e293b", highlightthickness=0, bd=0)
-    scrollbar = ttk.Scrollbar(cuerpo, orient="vertical", command=canvas.yview)
-    app.form_frame = tk.Frame(canvas, bg="#1e293b")
-
-    app.form_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    # ScrollableFrame nativo de customtkinter
+    app.form_frame = ctk.CTkScrollableFrame(
+        cuerpo,
+        fg_color=COLOR_FONDO,
+        corner_radius=0,
+        scrollbar_button_color="#334155",
+        scrollbar_button_hover_color="#475569",
     )
-    canvas.create_window((0, 0), window=app.form_frame, anchor="nw", width=400)
-    canvas.configure(yscrollcommand=scrollbar.set)
-
-    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-    def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    def _bind_mousewheel(_):
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
-    def _unbind_mousewheel(_):
-        canvas.unbind_all("<MouseWheel>")
-
-    canvas.bind("<Enter>", _bind_mousewheel)
-    canvas.bind("<Leave>", _unbind_mousewheel)
+    app.form_frame.pack(fill=tk.BOTH, expand=True, padx=(10, 4))
 
     # ============================================================
-    # CAMPOS DEL FORMULARIO
+    # HELPERS DE CAMPOS
     # ============================================================
-    app.entries = {}
-
     def crear_label(texto, opcional=False):
         texto_final = texto if not opcional else f"{texto} (opcional)"
-        tk.Label(app.form_frame, text=texto_final, bg="#1e293b",
-                 fg="#94a3b8", font=("Segoe UI", 9, "bold")).pack(
-                     anchor="w", pady=(10, 2), fill=tk.X)
+        ctk.CTkLabel(
+            app.form_frame,
+            text=texto_final,
+            text_color=COLOR_TEXTO_SEC,
+            font=("Segoe UI", 10, "bold"),
+            anchor="w",
+        ).pack(fill=tk.X, pady=(10, 3))
 
-    def crear_entry(key, placeholder=""):
-        ent = tk.Entry(app.form_frame, font=("Segoe UI", 10), bg="#334155",
-                       fg="#f8fafc", insertbackground="white",
-                       relief=tk.FLAT, borderwidth=0, highlightthickness=0)
-        ent.pack(fill=tk.X, ipady=5)
+    def crear_entry(key):
+        ent = ctk.CTkEntry(
+            app.form_frame,
+            font=("Segoe UI", 11),
+            fg_color=COLOR_INPUT,
+            text_color=COLOR_TEXTO,
+            border_width=0,
+            corner_radius=8,
+            height=36,
+        )
+        ent.pack(fill=tk.X)
         app.entries[key] = ent
         return ent
 
     def crear_text(key, height=3):
-        txt = tk.Text(app.form_frame, height=height, font=("Segoe UI", 10),
-                      bg="#334155", fg="#f8fafc", insertbackground="white",
-                      relief=tk.FLAT, borderwidth=0, highlightthickness=0)
+        txt = ctk.CTkTextbox(
+            app.form_frame,
+            height=height * 22,   # aproximar altura de líneas
+            font=("Segoe UI", 11),
+            fg_color=COLOR_INPUT,
+            text_color=COLOR_TEXTO,
+            border_width=0,
+            corner_radius=8,
+        )
         txt.pack(fill=tk.X)
         app.entries[key] = txt
         return txt
 
     def crear_separador(texto):
         """Separador visual entre secciones."""
-        frame_sep = tk.Frame(app.form_frame, bg="#1e293b")
-        frame_sep.pack(fill=tk.X, pady=(14, 4))
-        tk.Label(frame_sep, text=texto, bg="#1e293b", fg="#973359",
-                 font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        tk.Frame(frame_sep, bg="#334155", height=1).pack(fill=tk.X, pady=(2, 0))
+        frame_sep = ctk.CTkFrame(app.form_frame, fg_color=COLOR_FONDO, corner_radius=0)
+        frame_sep.pack(fill=tk.X, pady=(18, 6))
+
+        ctk.CTkLabel(
+            frame_sep,
+            text=texto,
+            text_color=COLOR_ACENTO,
+            font=("Segoe UI", 10, "bold"),
+            anchor="w",
+        ).pack(fill=tk.X)
+
+        ctk.CTkFrame(frame_sep, fg_color="#334155", height=1, corner_radius=0).pack(
+            fill=tk.X, pady=(3, 0))
+
+    # ============================================================
+    # CAMPOS DEL FORMULARIO
+    # ============================================================
+    app.entries = {}
 
     # --- Campos principales ---
     crear_label("Nombre del Cliente")
@@ -193,40 +264,58 @@ def crear_formulario(app):
     crear_entry("Monto Aproximado")
 
     # --- VISITA PAUTADA ---
-    crear_separador("📅 VISITA PAUTADA (opcional)")
+    crear_separador("📅  VISITA PAUTADA (opcional)")
 
     # Fila: Fecha + Hora en 2 columnas
-    frame_fecha = tk.Frame(app.form_frame, bg="#1e293b")
+    frame_fecha = ctk.CTkFrame(app.form_frame, fg_color=COLOR_FONDO, corner_radius=0)
     frame_fecha.pack(fill=tk.X, pady=(4, 2))
     frame_fecha.columnconfigure(0, weight=3)
     frame_fecha.columnconfigure(1, weight=2)
 
     # Fecha
-    frame_fecha_col = tk.Frame(frame_fecha, bg="#1e293b")
+    frame_fecha_col = ctk.CTkFrame(frame_fecha, fg_color=COLOR_FONDO, corner_radius=0)
     frame_fecha_col.grid(row=0, column=0, sticky="ew", padx=(0, 4))
-    tk.Label(frame_fecha_col, text="Fecha (dd/mm/aaaa)", bg="#1e293b",
-             fg="#94a3b8", font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 2))
-    entry_fecha_pautada = tk.Entry(frame_fecha_col, font=("Segoe UI", 10),
-                                    bg="#334155", fg="#f8fafc",
-                                    insertbackground="white",
-                                    relief=tk.FLAT, borderwidth=0, highlightthickness=0)
-    entry_fecha_pautada.pack(fill=tk.X, ipady=5)
+
+    ctk.CTkLabel(frame_fecha_col, text="Fecha (dd/mm/aaaa)",
+                 text_color=COLOR_TEXTO_SEC,
+                 font=("Segoe UI", 9, "bold"),
+                 anchor="w").pack(fill=tk.X, pady=(0, 2))
+
+    entry_fecha_pautada = ctk.CTkEntry(
+        frame_fecha_col,
+        font=("Segoe UI", 11),
+        fg_color=COLOR_INPUT,
+        text_color=COLOR_TEXTO,
+        border_width=0,
+        corner_radius=8,
+        height=36,
+    )
+    entry_fecha_pautada.pack(fill=tk.X)
     app.entries["FechaPautada"] = entry_fecha_pautada
 
     # Hora
-    frame_hora_col = tk.Frame(frame_fecha, bg="#1e293b")
+    frame_hora_col = ctk.CTkFrame(frame_fecha, fg_color=COLOR_FONDO, corner_radius=0)
     frame_hora_col.grid(row=0, column=1, sticky="ew", padx=(4, 0))
-    tk.Label(frame_hora_col, text="Hora (HH:MM)", bg="#1e293b",
-             fg="#94a3b8", font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 2))
-    entry_hora_pautada = tk.Entry(frame_hora_col, font=("Segoe UI", 10),
-                                   bg="#334155", fg="#f8fafc",
-                                   insertbackground="white",
-                                   relief=tk.FLAT, borderwidth=0, highlightthickness=0)
-    entry_hora_pautada.pack(fill=tk.X, ipady=5)
+
+    ctk.CTkLabel(frame_hora_col, text="Hora (HH:MM)",
+                 text_color=COLOR_TEXTO_SEC,
+                 font=("Segoe UI", 9, "bold"),
+                 anchor="w").pack(fill=tk.X, pady=(0, 2))
+
+    entry_hora_pautada = ctk.CTkEntry(
+        frame_hora_col,
+        font=("Segoe UI", 11),
+        fg_color=COLOR_INPUT,
+        text_color=COLOR_TEXTO,
+        border_width=0,
+        corner_radius=8,
+        height=36,
+    )
+    entry_hora_pautada.pack(fill=tk.X)
     app.entries["HoraPautada"] = entry_hora_pautada
 
     # --- NOTAS ---
-    crear_separador("📝 NOTAS")
+    crear_separador("📝  NOTAS")
 
     crear_label("Notas del cliente")
     crear_text("NotasCliente", height=3)
@@ -234,29 +323,16 @@ def crear_formulario(app):
     crear_label("Notas internas (no se ven en la tarjeta)")
     crear_text("NotasInternas", height=2)
 
-    # Checkbox subir auto
-    app.subir_auto = tk.BooleanVar(value=True)
-    tk.Checkbutton(app.form_frame, text="☁️  Subir a GitHub al guardar",
-                   variable=app.subir_auto, bg="#1e293b", fg="#cbd5e1",
-                   selectcolor="#334155", activebackground="#1e293b",
-                   activeforeground="#f8fafc", font=("Segoe UI", 9),
-                   cursor="hand2", borderwidth=0, highlightthickness=0).pack(
-                       anchor="w", pady=(14, 6))
-
-
-# ============================================================
-# UTILIDAD: hover para botones
-# ============================================================
-def _aplicar_hover(boton, color_normal, hover=None):
-    if hover is None:
-        hover = _aclarar_color(color_normal)
-    boton.bind("<Enter>", lambda e: boton.configure(bg=hover))
-    boton.bind("<Leave>", lambda e: boton.configure(bg=color_normal))
-
-
-def _aclarar_color(hex_color, factor=1.15):
-    hex_color = hex_color.lstrip("#")
-    r = min(255, int(int(hex_color[0:2], 16) * factor))
-    g = min(255, int(int(hex_color[2:4], 16) * factor))
-    b = min(255, int(int(hex_color[4:6], 16) * factor))
-    return f"#{r:02x}{g:02x}{b:02x}"
+    # --- Checkbox subir auto ---
+    app.subir_auto = ctk.BooleanVar(value=True)
+    ctk.CTkCheckBox(
+        app.form_frame,
+        text="☁️  Subir a GitHub al guardar",
+        variable=app.subir_auto,
+        text_color="#cbd5e1",
+        font=("Segoe UI", 10),
+        fg_color=COLOR_ACENTO,
+        hover_color="#7f2a4a",
+        border_color="#64748b",
+        corner_radius=6,
+    ).pack(anchor="w", pady=(16, 8))

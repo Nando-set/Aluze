@@ -23,10 +23,7 @@ MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
 
 
 def formatear_fecha_larga(fecha_str):
-    """
-    Convierte '15/10/2026' en 'Jueves 15 de octubre'.
-    Si no puede parsear, devuelve el string tal cual.
-    """
+    """Convierte '15/10/2026' en 'Jueves 15 de octubre'."""
     if not fecha_str:
         return ""
     try:
@@ -36,6 +33,67 @@ def formatear_fecha_larga(fecha_str):
         return f"{dia_semana} {dt.day} de {mes}"
     except Exception:
         return fecha_str
+
+
+# ============================================================
+# DETECCIÓN DE LINKS DE GOOGLE MAPS
+# ============================================================
+# Patrones que reconocemos como links de Google Maps
+PATRONES_MAPS = [
+    r"maps\.app\.goo\.gl",           # link corto oficial
+    r"goo\.gl/maps",                  # link corto viejo
+    r"google\.com/maps",              # link largo
+    r"maps\.google\.com",             # link largo viejo
+    r"maps\.google\.",                # variante internacional
+]
+
+
+def es_link_maps(texto):
+    """Devuelve True si el texto parece un link de Google Maps."""
+    if not texto:
+        return False
+    texto_lower = texto.lower()
+    return any(re.search(patron, texto_lower) for patron in PATRONES_MAPS)
+
+
+def es_url(texto):
+    """Devuelve True si el texto empieza por http:// o https://."""
+    if not texto:
+        return False
+    texto_strip = texto.strip().lower()
+    return texto_strip.startswith("http://") or texto_strip.startswith("https://")
+
+
+def obtener_maps_url(domicilio):
+    """
+    Devuelve la URL correcta para abrir Google Maps.
+
+    - Si el domicilio es un link de Google Maps → devuelve ese link tal cual.
+    - Si el domicilio es otra URL → devuelve esa URL (por si pegaste un link raro).
+    - Si el domicilio es texto → busca la dirección en Google Maps.
+    """
+    if not domicilio:
+        return ""
+
+    domicilio_strip = domicilio.strip()
+
+    # Caso 1: es un link de Google Maps → usarlo tal cual
+    if es_link_maps(domicilio_strip):
+        return domicilio_strip
+
+    # Caso 2: es alguna otra URL → usarla tal cual
+    if es_url(domicilio_strip):
+        return domicilio_strip
+
+    # Caso 3: es una dirección escrita → buscar en Google Maps
+    return f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(domicilio_strip)}"
+
+
+def obtener_texto_boton_maps(domicilio):
+    """Devuelve el texto del botón según el tipo de domicilio."""
+    if es_link_maps(domicilio):
+        return "📍 Ver ubicación compartida"
+    return "📍 Abrir en Google Maps"
 
 
 # ============================================================
@@ -83,14 +141,7 @@ def obtener_logo_html(desde_subcarpeta=False, claro=False):
 def generar_html(id_reg, cliente, domicilio, telefono, concepto,
                  cotizacion, monto, notas_cliente, fecha,
                  fecha_pautada="", hora_pautada="", notas_internas=""):
-    """
-    Genera la tarjeta HTML de una cotización.
-
-    Nuevos parámetros (opcionales):
-    - fecha_pautada: 'dd/mm/aaaa' (o vacío)
-    - hora_pautada: 'HH:MM' (o vacío)
-    - notas_internas: NO se muestra en la tarjeta (solo para el dashboard)
-    """
+    """Genera la tarjeta HTML de una cotización."""
     year, week, _, _ = obtener_semana_iso()
     nombre_semana = f"{year}-Semana-{week:02d}"
     carpeta_semana = CARPETA_COTIZACIONES / nombre_semana
@@ -112,13 +163,16 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     monto_e = html.escape(monto)
     notas_cliente_e = html.escape(notas_cliente)
 
-    maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(domicilio)}"
+    # MAPS con detección de link vs dirección
+    maps_url = obtener_maps_url(domicilio)
+    maps_texto_boton = obtener_texto_boton_maps(domicilio)
+
     telefono_limpio = re.sub(r'\D', '', telefono)
     whatsapp_url = f"https://wa.me/{telefono_limpio}"
 
     logo_html = obtener_logo_html(desde_subcarpeta=True, claro=False)
 
-    # ---- Bloque de FECHA PAUTADA (solo si existe) ----
+    # ---- Bloque FECHA PAUTADA ----
     if fecha_pautada:
         fecha_larga = formatear_fecha_larga(fecha_pautada)
         if hora_pautada:
@@ -134,7 +188,7 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     else:
         bloque_fecha_html = ""
 
-    # ---- Sección de notas del cliente (solo si hay) ----
+    # ---- Sección de notas del cliente ----
     if notas_cliente.strip():
         bloque_notas_html = f"""
   <div class="section">
@@ -166,29 +220,17 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
   .tagline {{ font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #64748b; font-weight: 600; }}
   .card-title {{ font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #973359; font-weight: 700; margin: 0 0 20px; text-align: center; }}
 
-  /* BLOQUE FECHA PAUTADA */
   .fecha-pautada {{
     background: linear-gradient(135deg, #973359 0%, #7f2a4a 100%);
-    color: #fff;
-    padding: 14px 18px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    text-align: center;
+    color: #fff; padding: 14px 18px; border-radius: 10px;
+    margin-bottom: 20px; text-align: center;
     box-shadow: 0 4px 12px rgba(151,51,89,0.25);
   }}
   .fecha-pautada-label {{
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    opacity: 0.9;
-    margin-bottom: 4px;
-    font-weight: 600;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+    opacity: 0.9; margin-bottom: 4px; font-weight: 600;
   }}
-  .fecha-pautada-valor {{
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-  }}
+  .fecha-pautada-valor {{ font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }}
 
   .section {{ margin-bottom: 18px; }}
   .label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }}
@@ -208,28 +250,11 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
   .btn-universal-copy {{ width: 100%; background: #1e293b; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }}
   .btn-universal-copy:hover {{ background: #334155; }}
 
-  .share-buttons {{
-    display: flex;
-    gap: 10px;
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid #f1f5f9;
-  }}
-  .btn-share {{
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 11px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-    transition: opacity 0.15s, transform 0.1s;
-  }}
+  .share-buttons {{ display: flex; gap: 10px; margin-top: 18px; padding-top: 18px; border-top: 1px solid #f1f5f9; }}
+  .btn-share {{ flex: 1; display: inline-flex; align-items: center; justify-content: center;
+                gap: 6px; padding: 11px 14px; border-radius: 8px; font-size: 13px;
+                font-weight: 600; text-decoration: none; cursor: pointer; border: none;
+                transition: opacity 0.15s, transform 0.1s; }}
   .btn-share:hover {{ opacity: 0.88; }}
   .btn-share:active {{ transform: scale(0.98); }}
   .btn-copy-link {{ background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }}
@@ -278,7 +303,7 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
       <span class="value" id="val-dom">{domicilio_e}</span>
       <button class="btn-action btn-copy" onclick="copiarTexto('val-dom','¡Domicilio copiado!')">📋 Copiar</button>
     </div>
-    <a class="map-link" href="{maps_url}" target="_blank">📍 Abrir ubicación en Google Maps</a>
+    <a class="map-link" href="{maps_url}" target="_blank">{maps_texto_boton}</a>
   </div>
   <div class="section">
     <div class="label">Detalles de la Cotización</div>
