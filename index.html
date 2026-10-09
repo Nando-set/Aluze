@@ -12,11 +12,17 @@
   .header img { max-width: 180px; height: auto; }
   .header h1 { font-size: 22px; margin: 12px 0 4px; color: #f8fafc; }
   .header p { color: #94a3b8; font-size: 13px; margin: 0; }
+
+  .top-nav { margin-top: 14px; }
+  .top-nav a { display: inline-block; padding: 10px 22px; border-radius: 10px;
+               background: #973359; color: #fff; text-decoration: none;
+               font-weight: 700; font-size: 14px; }
+
   .contador { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
   .contador .stat { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px 18px; }
   .contador .num { font-size: 22px; font-weight: 800; color: #f8fafc; display: block; }
   .contador .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; }
-  .contador .stat.destacado .num { color: #34d399; }
+  .contador .stat.destacado .num { color: #fbbf24; }
 
   .controles { max-width: 640px; margin: 24px auto 30px; }
   .buscador input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 15px; outline: none; }
@@ -26,19 +32,33 @@
   .filtros button:hover { border-color: #973359; color: #f8fafc; }
   .filtros button.activo { background: #973359; border-color: #973359; color: #fff; }
 
-  .semana { margin-bottom: 30px; }
-  .semana h2 { font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .semana-actual h2 { border-left-color: #34d399; }
+  .semana { margin-bottom: 40px; }
+  .semana > h2 { font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .semana-actual > h2 { border-left-color: #34d399; }
   .rango { font-size: 12px; color: #94a3b8; font-weight: 400; }
   .badge { background: #334155; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
   .semana-actual .badge { background: #064e3b; color: #6ee7b7; }
 
+  /* GRUPOS POR DÍA */
+  .dia { margin-bottom: 24px; }
+  .dia h3 { font-size: 13px; color: #fbbf24; margin: 0 0 10px 0;
+            padding-left: 8px; border-left: 3px solid #fbbf24;
+            font-weight: 700; letter-spacing: 0.5px; }
+
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
   .cot-card { display: block; text-decoration: none; background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; transition: transform 0.15s, border-color 0.15s; color: inherit; cursor: pointer; }
   .cot-card:hover { transform: translateY(-3px); border-color: #973359; box-shadow: 0 6px 20px rgba(151,51,89,0.2); }
+
   .cot-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
   .cliente { font-weight: 700; color: #f8fafc; font-size: 15px; }
   .monto { color: #34d399; font-weight: 700; font-size: 15px; white-space: nowrap; }
+
+  /* FECHA PAUTADA DESTACADA EN EL INDEX */
+  .cot-fecha { background: linear-gradient(135deg, #973359, #7f2a4a);
+               color: #fff; padding: 6px 10px; border-radius: 6px;
+               font-size: 13px; font-weight: 700; margin-bottom: 10px;
+               text-align: center; }
+
   .cot-info { font-size: 13px; color: #cbd5e1; margin-bottom: 5px; }
   .nota { font-size: 12px; color: #fbbf24; font-style: italic; margin-top: 6px; }
   .cot-cta { margin-top: 12px; padding-top: 10px; border-top: 1px solid #334155; font-size: 12px; color: #973359; font-weight: 600; }
@@ -50,17 +70,13 @@
   <div class="header">
     <img src="assets/LogoAluzeClaro.png" alt="Aluze" class="logo-img">
     <h1>Panel de Cotizaciones</h1>
-    <p>Persianas &amp; Decoración · Actualizado el 09/10/2026 02:23</p>
-    <div class="top-nav" style="margin-top: 14px;">
-      <a href="catalogo.html" style="display: inline-block; padding: 10px 22px;
-         border-radius: 10px; background: #973359; color: #fff;
-         text-decoration: none; font-weight: 700; font-size: 14px;">
-        🛍️ Ver catálogo de productos
-      </a>
+    <p>Persianas &amp; Decoración · Actualizado el 09/10/2026 14:12</p>
+    <div class="top-nav">
+      <a href="catalogo.html">🛍️ Ver catálogo de productos</a>
     </div>
     <div class="contador">
       <div class="stat"><span class="num">6</span><span class="lbl">Total</span></div>
-      <div class="stat destacado"><span class="num">6</span><span class="lbl">Esta semana</span></div>
+      <div class="stat destacado"><span class="num">0</span><span class="lbl">Pautadas esta semana</span></div>
       <div class="stat"><span class="num">1</span><span class="lbl">Semanas</span></div>
     </div>
   </div>
@@ -79,71 +95,85 @@
   <div id="contenido">
     
         <section class="semana semana-actual" data-semana="2026-Semana-41" data-mes="2026-10">
-          <h2>📅 2026-Semana-41 <span class="rango">(05/10/2026 → 11/10/2026)</span> <span class="badge">6 cotizaciónes</span></h2>
-          <div class="grid">
-            <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791526988954_juan_jose_de_anda.html" target="_blank">
-              <div class="cot-head">
-                <span class="cliente">👤 Juan José De Anda</span>
-                <span class="monto">$4,657.50 MXN,</span>
-              </div>
-              <div class="cot-info">📦 Sheer Elegance</div>
-              <div class="cot-info">📞 3328009667 &nbsp;|&nbsp; 🗓️ 09/10/2026 02:23</div>
-              <div class="nota">📝 Cliente pide cita par el dia sábado entre las 10 AM y las 3 pm</div>
-              <div class="cot-cta">🔗 Ver cotización completa →</div>
-            </a>
-            <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791273213720_mario.html" target="_blank">
-              <div class="cot-head">
-                <span class="cliente">👤 Mario</span>
-                <span class="monto">$3,390 MXN Aprox</span>
-              </div>
-              <div class="cot-info">📦 Sheer Elegance</div>
-              <div class="cot-info">📞 3316030921 &nbsp;|&nbsp; 🗓️ 06/10/2026 03:53</div>
-              <div class="nota">📝 El cliente nos pide pasar el día de mañana a la hora que podamos. Parece que nos puede atender en cu...</div>
-              <div class="cot-cta">🔗 Ver cotización completa →</div>
-            </a>
-            <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791273057765_miguel_angel_cortes_cruz.html" target="_blank">
-              <div class="cot-head">
-                <span class="cliente">👤 Miguel Angel Cortes Cruz</span>
-                <span class="monto"></span>
-              </div>
-              <div class="cot-info">📦 </div>
-              <div class="cot-info">📞 3722 8851 &nbsp;|&nbsp; 🗓️ 06/10/2026 03:50</div>
-              <div class="nota">📝 El cliente tiene disponibilidad a partir del día jueves (jueves, viernes o sábado), ya que lunes, ma...</div>
-              <div class="cot-cta">🔗 Ver cotización completa →</div>
-            </a>
-            <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791272967315_asesor_de_contrataciones_izzi.html" target="_blank">
-              <div class="cot-head">
-                <span class="cliente">👤 Asesor de contrataciones izzi</span>
-                <span class="monto"></span>
-              </div>
-              <div class="cot-info">📦 4 ventanas</div>
-              <div class="cot-info">📞 5541793122 &nbsp;|&nbsp; 🗓️ 06/10/2026 03:49</div>
-              <div class="nota">📝 Cotizacion Martes de 9am a 2PM
+          <h2>📅 2026-Semana-41 <span class="rango">(05/10/2026 → 11/10/2026)</span>
+            <span class="badge">6 cotizaciónes</span>
+          </h2>
+          
+            <div class="dia">
+              <h3>📅 Sin fecha pautada</h3>
+              <div class="grid">
+                
+    <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791271951357_olivia_manzo.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Olivia Manzo</span>
+        <span class="monto">$5,800 MXN</span>
+      </div>
+      
+      <div class="cot-info">📦 persiana Sheer Elegance</div>
+      <div class="cot-info">📞 3330225008 &nbsp;|&nbsp; 🗓️ Creada: 06/10/2026 03:32</div>
+      <div class="nota">📝 Cotizacion para el dia Viernes  de 1 a 2</div>
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
+    <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791272646840_irving_gutierrez.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Irving Gutiérrez</span>
+        <span class="monto">24,211 MXN Aprox</span>
+      </div>
+      
+      <div class="cot-info">📦 10 persianas en total</div>
+      <div class="cot-info">📞 3335931554 &nbsp;|&nbsp; 🗓️ Creada: 06/10/2026 03:44</div>
+      <div class="nota">📝 La cotización es para el día martes.</div>
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
+    <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791272967315_asesor_de_contrataciones_izzi.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Asesor de contrataciones izzi</span>
+        <span class="monto"></span>
+      </div>
+      
+      <div class="cot-info">📦 4 ventanas</div>
+      <div class="cot-info">📞 5541793122 &nbsp;|&nbsp; 🗓️ Creada: 06/10/2026 03:49</div>
+      <div class="nota">📝 Cotizacion Martes de 9am a 2PM
 Me marcan por Whatsapp 
 La cliente dice que no hay señal
 &quot;Es un coto ...</div>
-              <div class="cot-cta">🔗 Ver cotización completa →</div>
-            </a>
-            <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791272646840_irving_gutierrez.html" target="_blank">
-              <div class="cot-head">
-                <span class="cliente">👤 Irving Gutiérrez</span>
-                <span class="monto">24,211 MXN Aprox</span>
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
+    <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791273057765_miguel_angel_cortes_cruz.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Miguel Angel Cortes Cruz</span>
+        <span class="monto"></span>
+      </div>
+      
+      <div class="cot-info">📦 </div>
+      <div class="cot-info">📞 33722 8851 &nbsp;|&nbsp; 🗓️ Creada: 06/10/2026 03:50</div>
+      <div class="nota">📝 El cliente tiene disponibilidad a partir del día jueves (jueves, viernes o sábado), ya que lunes, ma...</div>
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
+    <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791273213720_mario.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Mario</span>
+        <span class="monto">$3,390 MXN Aprox</span>
+      </div>
+      
+      <div class="cot-info">📦 Sheer Elegance</div>
+      <div class="cot-info">📞 3316030921 &nbsp;|&nbsp; 🗓️ Creada: 06/10/2026 03:53</div>
+      <div class="nota">📝 El cliente nos pide pasar el día de mañana a la hora que podamos. Parece que nos puede atender en cu...</div>
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
+    <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791526988954_juan_jose_de_anda.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Juan José De Anda</span>
+        <span class="monto">$4,657.50 MXN,</span>
+      </div>
+      
+      <div class="cot-info">📦 Sheer Elegance</div>
+      <div class="cot-info">📞 3328009667 &nbsp;|&nbsp; 🗓️ Creada: 09/10/2026 02:23</div>
+      <div class="nota">📝 Cliente pide cita par el dia sábado entre las 10 AM y las 3 pm</div>
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
               </div>
-              <div class="cot-info">📦 10 persianas en total</div>
-              <div class="cot-info">📞 3335931554 &nbsp;|&nbsp; 🗓️ 06/10/2026 03:44</div>
-              <div class="nota">📝 La cotización es para el día martes.</div>
-              <div class="cot-cta">🔗 Ver cotización completa →</div>
-            </a>
-            <a class="cot-card" href="cotizaciones/2026-Semana-41/cotizacion_1791271951357_olivia_manzo.html" target="_blank">
-              <div class="cot-head">
-                <span class="cliente">👤 Olivia Manzo</span>
-                <span class="monto">$5,800 MXN</span>
-              </div>
-              <div class="cot-info">📦 persiana Sheer Elegance</div>
-              <div class="cot-info">📞 3330225008 &nbsp;|&nbsp; 🗓️ 06/10/2026 03:32</div>
-              <div class="nota">📝 Cotizacion para el dia Viernes  de 1 a 2</div>
-              <div class="cot-cta">🔗 Ver cotización completa →</div>
-            </a></div>
+            </div>
         </section>
   </div>
   <footer>Persianas Aluze · Generado automáticamente</footer>
@@ -176,6 +206,12 @@ La cliente dice que no hay señal
           const coincide = card.innerText.toLowerCase().includes(q);
           card.style.display = coincide ? '' : 'none';
           if (coincide) tarjetasVisibles++;
+        });
+
+        // Ocultar días sin tarjetas visibles
+        sec.querySelectorAll('.dia').forEach(dia => {
+          const visibles = dia.querySelectorAll('.cot-card:not([style*="display: none"])').length;
+          dia.style.display = visibles > 0 ? '' : 'none';
         });
 
         sec.style.display = (pasaFiltro && tarjetasVisibles > 0) ? '' : 'none';

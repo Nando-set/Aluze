@@ -48,7 +48,6 @@ def crear_formulario(app):
     footer.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
 
     def boton_principal(parent, texto, color, comando):
-        """Botón grande, ocupa todo el ancho."""
         btn = tk.Button(parent, text=texto, bg=color, fg="white",
                         font=("Segoe UI", 10, "bold"),
                         relief=tk.FLAT, cursor="hand2",
@@ -60,7 +59,6 @@ def crear_formulario(app):
         return btn
 
     def boton_par(parent, texto, color, comando):
-        """Dos botones en columnas, uno al lado del otro."""
         row = tk.Frame(parent, bg="#1e293b")
         row.pack(fill=tk.X, pady=(0, 6))
         row.columnconfigure(0, weight=1)
@@ -85,23 +83,19 @@ def crear_formulario(app):
         _aplicar_hover(btn2, color[1])
         return btn1, btn2
 
-    # --- Botón principal ---
     boton_principal(footer, "✨  Generar cotización", "#973359",
                     app.guardar_cotizacion)
 
-    # --- Fila 1: Panel + Subir ---
     boton_par(footer,
               ["🌐  Panel", "☁️  Subir"],
               ["#0ea5e9", "#16a34a"],
               [lambda: webbrowser.open(URL_BASE), app.accion_subir_github])
 
-    # --- Fila 2: Actualizar + Regenerar ---
     boton_par(footer,
               ["🔄  Actualizar", "🔁  Regenerar"],
               ["#7c3aed", "#0891b2"],
               [app.accion_forzar_actualizacion, app.regenerar_todas_las_tarjetas])
 
-    # --- Botón borrar todo (pequeño, rojo tenue) ---
     btn_borrar = tk.Button(footer, text="🗑️  Borrar todo",
                            bg="#7f1d1d", fg="#fecaca",
                            font=("Segoe UI", 9, "bold"),
@@ -132,7 +126,6 @@ def crear_formulario(app):
     canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # Scroll con la rueda del ratón
     def _on_mousewheel(event):
         canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
@@ -149,31 +142,97 @@ def crear_formulario(app):
     # CAMPOS DEL FORMULARIO
     # ============================================================
     app.entries = {}
-    campos = [
-        ("Nombre del Cliente", "entry"),
-        ("Domicilio", "entry"),
-        ("Teléfono Celular", "entry"),
-        ("Concepto / Sistema", "entry"),
-        ("Detalles de Cotización", "text"),
-        ("Monto Aproximado", "entry"),
-        ("Notas / Citas / Observaciones", "text"),
-    ]
-    for label_text, tipo in campos:
-        tk.Label(app.form_frame, text=label_text, bg="#1e293b",
+
+    def crear_label(texto, opcional=False):
+        texto_final = texto if not opcional else f"{texto} (opcional)"
+        tk.Label(app.form_frame, text=texto_final, bg="#1e293b",
                  fg="#94a3b8", font=("Segoe UI", 9, "bold")).pack(
-                     anchor="w", pady=(8, 2), fill=tk.X)
-        if tipo == "entry":
-            ent = tk.Entry(app.form_frame, font=("Segoe UI", 10), bg="#334155",
-                           fg="#f8fafc", insertbackground="white",
-                           relief=tk.FLAT, borderwidth=0, highlightthickness=0)
-            ent.pack(fill=tk.X, ipady=5)
-            app.entries[label_text] = ent
-        else:
-            txt = tk.Text(app.form_frame, height=4, font=("Segoe UI", 10),
-                          bg="#334155", fg="#f8fafc", insertbackground="white",
-                          relief=tk.FLAT, borderwidth=0, highlightthickness=0)
-            txt.pack(fill=tk.X)
-            app.entries[label_text] = txt
+                     anchor="w", pady=(10, 2), fill=tk.X)
+
+    def crear_entry(key, placeholder=""):
+        ent = tk.Entry(app.form_frame, font=("Segoe UI", 10), bg="#334155",
+                       fg="#f8fafc", insertbackground="white",
+                       relief=tk.FLAT, borderwidth=0, highlightthickness=0)
+        ent.pack(fill=tk.X, ipady=5)
+        app.entries[key] = ent
+        return ent
+
+    def crear_text(key, height=3):
+        txt = tk.Text(app.form_frame, height=height, font=("Segoe UI", 10),
+                      bg="#334155", fg="#f8fafc", insertbackground="white",
+                      relief=tk.FLAT, borderwidth=0, highlightthickness=0)
+        txt.pack(fill=tk.X)
+        app.entries[key] = txt
+        return txt
+
+    def crear_separador(texto):
+        """Separador visual entre secciones."""
+        frame_sep = tk.Frame(app.form_frame, bg="#1e293b")
+        frame_sep.pack(fill=tk.X, pady=(14, 4))
+        tk.Label(frame_sep, text=texto, bg="#1e293b", fg="#973359",
+                 font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        tk.Frame(frame_sep, bg="#334155", height=1).pack(fill=tk.X, pady=(2, 0))
+
+    # --- Campos principales ---
+    crear_label("Nombre del Cliente")
+    crear_entry("Nombre del Cliente")
+
+    crear_label("Domicilio")
+    crear_entry("Domicilio")
+
+    crear_label("Teléfono Celular")
+    crear_entry("Teléfono Celular")
+
+    crear_label("Concepto / Sistema")
+    crear_entry("Concepto / Sistema")
+
+    crear_label("Detalles de Cotización")
+    crear_text("Detalles de Cotización", height=4)
+
+    crear_label("Monto Aproximado")
+    crear_entry("Monto Aproximado")
+
+    # --- VISITA PAUTADA ---
+    crear_separador("📅 VISITA PAUTADA (opcional)")
+
+    # Fila: Fecha + Hora en 2 columnas
+    frame_fecha = tk.Frame(app.form_frame, bg="#1e293b")
+    frame_fecha.pack(fill=tk.X, pady=(4, 2))
+    frame_fecha.columnconfigure(0, weight=3)
+    frame_fecha.columnconfigure(1, weight=2)
+
+    # Fecha
+    frame_fecha_col = tk.Frame(frame_fecha, bg="#1e293b")
+    frame_fecha_col.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+    tk.Label(frame_fecha_col, text="Fecha (dd/mm/aaaa)", bg="#1e293b",
+             fg="#94a3b8", font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 2))
+    entry_fecha_pautada = tk.Entry(frame_fecha_col, font=("Segoe UI", 10),
+                                    bg="#334155", fg="#f8fafc",
+                                    insertbackground="white",
+                                    relief=tk.FLAT, borderwidth=0, highlightthickness=0)
+    entry_fecha_pautada.pack(fill=tk.X, ipady=5)
+    app.entries["FechaPautada"] = entry_fecha_pautada
+
+    # Hora
+    frame_hora_col = tk.Frame(frame_fecha, bg="#1e293b")
+    frame_hora_col.grid(row=0, column=1, sticky="ew", padx=(4, 0))
+    tk.Label(frame_hora_col, text="Hora (HH:MM)", bg="#1e293b",
+             fg="#94a3b8", font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(0, 2))
+    entry_hora_pautada = tk.Entry(frame_hora_col, font=("Segoe UI", 10),
+                                   bg="#334155", fg="#f8fafc",
+                                   insertbackground="white",
+                                   relief=tk.FLAT, borderwidth=0, highlightthickness=0)
+    entry_hora_pautada.pack(fill=tk.X, ipady=5)
+    app.entries["HoraPautada"] = entry_hora_pautada
+
+    # --- NOTAS ---
+    crear_separador("📝 NOTAS")
+
+    crear_label("Notas del cliente")
+    crear_text("NotasCliente", height=3)
+
+    crear_label("Notas internas (no se ven en la tarjeta)")
+    crear_text("NotasInternas", height=2)
 
     # Checkbox subir auto
     app.subir_auto = tk.BooleanVar(value=True)
@@ -189,7 +248,6 @@ def crear_formulario(app):
 # UTILIDAD: hover para botones
 # ============================================================
 def _aplicar_hover(boton, color_normal, hover=None):
-    """Añade efecto hover a un botón (aclarando u oscureciendo el color)."""
     if hover is None:
         hover = _aclarar_color(color_normal)
     boton.bind("<Enter>", lambda e: boton.configure(bg=hover))
@@ -197,7 +255,6 @@ def _aplicar_hover(boton, color_normal, hover=None):
 
 
 def _aclarar_color(hex_color, factor=1.15):
-    """Devuelve una versión más clara del color hex dado."""
     hex_color = hex_color.lstrip("#")
     r = min(255, int(int(hex_color[0:2], 16) * factor))
     g = min(255, int(int(hex_color[2:4], 16) * factor))

@@ -5,13 +5,37 @@ Aquí vive TODO lo relacionado con el diseño de una cotización.
 import re
 import html
 import urllib.parse
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from config import (
     BASE_DIR, CARPETA_COTIZACIONES,
     LOGO_PNG, LOGO_PNG_CLARO, URL_BASE
 )
+
+
+# ============================================================
+# DÍAS Y MESES EN ESPAÑOL
+# ============================================================
+DIAS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+
+def formatear_fecha_larga(fecha_str):
+    """
+    Convierte '15/10/2026' en 'Jueves 15 de octubre'.
+    Si no puede parsear, devuelve el string tal cual.
+    """
+    if not fecha_str:
+        return ""
+    try:
+        dt = datetime.strptime(fecha_str.strip(), "%d/%m/%Y")
+        dia_semana = DIAS_ES[dt.weekday()]
+        mes = MESES_ES[dt.month - 1]
+        return f"{dia_semana} {dt.day} de {mes}"
+    except Exception:
+        return fecha_str
 
 
 # ============================================================
@@ -38,13 +62,7 @@ def obtener_semana_iso(fecha=None):
 
 
 def obtener_logo_html(desde_subcarpeta=False, claro=False):
-    """
-    Devuelve el HTML del logo.
-    - desde_subcarpeta=True  -> ruta ../../assets/... (tarjetas en cotizaciones/)
-    - desde_subcarpeta=False -> ruta assets/... (panel en la raíz)
-    - claro=False -> logo original (letras negras)
-    - claro=True  -> logo claro (letras blancas)
-    """
+    """Devuelve el HTML del logo."""
     archivo = "LogoAluzeClaro.png" if claro else "LogoAluze.png"
     ruta_completa = LOGO_PNG_CLARO if claro else LOGO_PNG
 
@@ -63,7 +81,16 @@ def obtener_logo_html(desde_subcarpeta=False, claro=False):
 # GENERADOR PRINCIPAL
 # ============================================================
 def generar_html(id_reg, cliente, domicilio, telefono, concepto,
-                 cotizacion, monto, notas, fecha):
+                 cotizacion, monto, notas_cliente, fecha,
+                 fecha_pautada="", hora_pautada="", notas_internas=""):
+    """
+    Genera la tarjeta HTML de una cotización.
+
+    Nuevos parámetros (opcionales):
+    - fecha_pautada: 'dd/mm/aaaa' (o vacío)
+    - hora_pautada: 'HH:MM' (o vacío)
+    - notas_internas: NO se muestra en la tarjeta (solo para el dashboard)
+    """
     year, week, _, _ = obtener_semana_iso()
     nombre_semana = f"{year}-Semana-{week:02d}"
     carpeta_semana = CARPETA_COTIZACIONES / nombre_semana
@@ -74,22 +101,51 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     ruta_html = carpeta_semana / nombre_archivo
     ruta_relativa = ruta_html.relative_to(BASE_DIR).as_posix()
 
-    # URL completa de esta tarjeta en GitHub Pages (fallback)
     url_individual = f"{URL_BASE}{ruta_relativa}"
 
+    # Escapar
     cliente_e = html.escape(cliente)
     domicilio_e = html.escape(domicilio)
     telefono_e = html.escape(telefono)
     concepto_e = html.escape(concepto)
     cotizacion_e = html.escape(cotizacion)
     monto_e = html.escape(monto)
-    notas_e = html.escape(notas)
+    notas_cliente_e = html.escape(notas_cliente)
 
     maps_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(domicilio)}"
     telefono_limpio = re.sub(r'\D', '', telefono)
     whatsapp_url = f"https://wa.me/{telefono_limpio}"
 
     logo_html = obtener_logo_html(desde_subcarpeta=True, claro=False)
+
+    # ---- Bloque de FECHA PAUTADA (solo si existe) ----
+    if fecha_pautada:
+        fecha_larga = formatear_fecha_larga(fecha_pautada)
+        if hora_pautada:
+            texto_fecha = f"{fecha_larga} · {hora_pautada}"
+        else:
+            texto_fecha = fecha_larga
+
+        bloque_fecha_html = f"""
+  <div class="fecha-pautada">
+    <div class="fecha-pautada-label">📅 Visita pautada</div>
+    <div class="fecha-pautada-valor">{html.escape(texto_fecha)}</div>
+  </div>"""
+    else:
+        bloque_fecha_html = ""
+
+    # ---- Sección de notas del cliente (solo si hay) ----
+    if notas_cliente.strip():
+        bloque_notas_html = f"""
+  <div class="section">
+    <div class="label">Notas / Observaciones</div>
+    <div class="box" id="val-notas" style="border-left-color:#d97706;">{notas_cliente_e}</div>
+  </div>"""
+    else:
+        bloque_notas_html = """
+  <div class="section" style="display:none;">
+    <div class="box" id="val-notas"></div>
+  </div>"""
 
     html_content = f"""<!DOCTYPE html>
 <html lang="es">
@@ -109,6 +165,31 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
   .logo-container img {{ max-width: 150px; height: auto; display: block; margin: 0 auto 8px; }}
   .tagline {{ font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #64748b; font-weight: 600; }}
   .card-title {{ font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #973359; font-weight: 700; margin: 0 0 20px; text-align: center; }}
+
+  /* BLOQUE FECHA PAUTADA */
+  .fecha-pautada {{
+    background: linear-gradient(135deg, #973359 0%, #7f2a4a 100%);
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(151,51,89,0.25);
+  }}
+  .fecha-pautada-label {{
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.9;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }}
+  .fecha-pautada-valor {{
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }}
+
   .section {{ margin-bottom: 18px; }}
   .label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }}
   .value-row {{ display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; gap: 10px; }}
@@ -127,7 +208,6 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
   .btn-universal-copy {{ width: 100%; background: #1e293b; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }}
   .btn-universal-copy:hover {{ background: #334155; }}
 
-  /* BOTONES DE COMPARTIR */
   .share-buttons {{
     display: flex;
     gap: 10px;
@@ -152,18 +232,15 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
   }}
   .btn-share:hover {{ opacity: 0.88; }}
   .btn-share:active {{ transform: scale(0.98); }}
-  .btn-copy-link {{
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #e2e8f0;
-  }}
-  .btn-whatsapp {{
-    background: #25d366;
-    color: #fff;
-  }}
+  .btn-copy-link {{ background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }}
+  .btn-whatsapp {{ background: #25d366; color: #fff; }}
 
-  .toast {{ position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; z-index: 1000; }}
-  .footer {{ text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; }}
+  .toast {{ position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+           background: #10b981; color: #fff; padding: 10px 20px; border-radius: 30px;
+           font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+           display: none; z-index: 1000; }}
+  .footer {{ text-align: center; font-size: 11px; color: #94a3b8; margin-top: 20px;
+            border-top: 1px solid #f1f5f9; padding-top: 15px; }}
 </style>
 </head>
 <body>
@@ -173,6 +250,8 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     <div class="tagline">Persianas &amp; Decoración</div>
   </div>
   <div class="card-title">Tarjeta de Cotización</div>
+
+  {bloque_fecha_html}
 
   <div class="section">
     <div class="label">Cliente</div>
@@ -205,10 +284,7 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
     <div class="label">Detalles de la Cotización</div>
     <div class="box" id="val-detalles">{cotizacion_e}</div>
   </div>
-  <div class="section">
-    <div class="label">Notas / Observaciones</div>
-    <div class="box" id="val-notas" style="border-left-color:#d97706;">{notas_e}</div>
-  </div>
+  {bloque_notas_html}
   <div class="price-box">
     <div class="price-label">Monto Aproximado</div>
     <div class="price-value" id="val-monto">{monto_e}</div>
@@ -228,15 +304,14 @@ def generar_html(id_reg, cliente, domicilio, telefono, concepto,
 </div>
 <div id="toast" class="toast">¡Copiado!</div>
 <script>
-// URL de fallback (GitHub Pages) por si se abre localmente
 const URL_FALLBACK = "{url_individual}";
+const FECHA_PAUTADA = "{html.escape(fecha_pautada)}";
+const HORA_PAUTADA = "{html.escape(hora_pautada)}";
 
 function obtenerUrl() {{
-  // Si estamos en la web, usar la URL actual
   if (window.location.protocol === "http:" || window.location.protocol === "https:") {{
     return window.location.href;
   }}
-  // Si se abre localmente (file://), usar el fallback
   return URL_FALLBACK;
 }}
 
@@ -262,8 +337,16 @@ function copiarEnlace() {{
 }}
 
 function copiarTodo() {{
-  const g = id => document.getElementById(id).innerText;
+  const g = id => {{
+    const el = document.getElementById(id);
+    return el ? el.innerText : '';
+  }};
   let txt = `*COTIZACIÓN ALUZE*\\n`;
+  if (FECHA_PAUTADA) {{
+    let fp = FECHA_PAUTADA;
+    if (HORA_PAUTADA) fp += ` · ${{HORA_PAUTADA}}`;
+    txt += `📅 *Visita pautada:* ${{fp}}\\n`;
+  }}
   txt += `👤 *Cliente:* ${{g('val-cliente')}}\\n`;
   txt += `📦 *Concepto:* ${{g('val-concepto')}}\\n`;
   txt += `📞 *Teléfono:* ${{g('val-tel')}}\\n`;
@@ -275,7 +358,6 @@ function copiarTodo() {{
   navigator.clipboard.writeText(txt).then(() => mostrarToast('¡Copiado!'));
 }}
 
-// Configurar botón de WhatsApp al cargar
 document.addEventListener('DOMContentLoaded', () => {{
   const url = obtenerUrl();
   const mensaje = encodeURIComponent(

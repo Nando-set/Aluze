@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cotización - Miguel Angel Cortes Cruz | Aluze</title>
+<title>Cotización - Cliente Prueba | Aluze</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -103,46 +103,50 @@
   <div class="card-title">Tarjeta de Cotización</div>
 
   
+  <div class="fecha-pautada">
+    <div class="fecha-pautada-label">📅 Visita pautada</div>
+    <div class="fecha-pautada-valor">Jueves 15 de octubre · 16:00</div>
+  </div>
 
   <div class="section">
     <div class="label">Cliente</div>
-    <div class="value-row"><span class="value" id="val-cliente">Miguel Angel Cortes Cruz</span></div>
+    <div class="value-row"><span class="value" id="val-cliente">Cliente Prueba</span></div>
   </div>
   <div class="section">
     <div class="label">Concepto / Sistema</div>
-    <div class="value-row"><span class="value" id="val-concepto"></span></div>
+    <div class="value-row"><span class="value" id="val-concepto">Sheer Elegance</span></div>
   </div>
   <div class="section">
     <div class="label">Teléfono y Contacto</div>
     <div class="value-row">
-      <span class="value" id="val-tel">33722 8851</span>
+      <span class="value" id="val-tel">3312345678</span>
       <button class="btn-action btn-copy" onclick="copiarTexto('val-tel','¡Teléfono copiado!')">📋 Copiar</button>
     </div>
     <div class="actions-row">
-      <a class="btn-action btn-call" href="tel:33722 8851">📞 Llamar</a>
-      <a class="btn-action btn-wa" href="https://wa.me/337228851" target="_blank">💬 WhatsApp</a>
+      <a class="btn-action btn-call" href="tel:3312345678">📞 Llamar</a>
+      <a class="btn-action btn-wa" href="https://wa.me/3312345678" target="_blank">💬 WhatsApp</a>
     </div>
   </div>
   <div class="section">
     <div class="label">Domicilio</div>
     <div class="value-row" style="align-items:flex-start;">
-      <span class="value" id="val-dom">https://maps.app.goo.gl/ySmn3KuctNANyHSr7?g_st=awb</span>
+      <span class="value" id="val-dom">Calle Falsa 123</span>
       <button class="btn-action btn-copy" onclick="copiarTexto('val-dom','¡Domicilio copiado!')">📋 Copiar</button>
     </div>
-    <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=https%3A//maps.app.goo.gl/ySmn3KuctNANyHSr7%3Fg_st%3Dawb" target="_blank">📍 Abrir ubicación en Google Maps</a>
+    <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Calle%20Falsa%20123" target="_blank">📍 Abrir ubicación en Google Maps</a>
   </div>
   <div class="section">
     <div class="label">Detalles de la Cotización</div>
-    <div class="box" id="val-detalles">Cotización: Casa de dos plantas (requiere visita para toma de medidas en el lugar).</div>
+    <div class="box" id="val-detalles">2 ventanas grandes</div>
   </div>
   
   <div class="section">
     <div class="label">Notas / Observaciones</div>
-    <div class="box" id="val-notas" style="border-left-color:#d97706;">El cliente tiene disponibilidad a partir del día jueves (jueves, viernes o sábado), ya que lunes, martes y miércoles se encuentra ocupado</div>
+    <div class="box" id="val-notas" style="border-left-color:#d97706;">Cliente muy amable</div>
   </div>
   <div class="price-box">
     <div class="price-label">Monto Aproximado</div>
-    <div class="price-value" id="val-monto"></div>
+    <div class="price-value" id="val-monto">$5,800 MXN</div>
   </div>
   <button class="btn-universal-copy" onclick="copiarTodo()">📋 Copiar toda la información para chat</button>
 
@@ -155,13 +159,13 @@
     </a>
   </div>
 
-  <div class="footer">Generado el 06/10/2026 03:50 | Persianas Aluze</div>
+  <div class="footer">Generado el 09/10/2026 15:30 | Persianas Aluze</div>
 </div>
 <div id="toast" class="toast">¡Copiado!</div>
 <script>
-const URL_FALLBACK = "https://nando-set.github.io/Aluze/cotizaciones/2026-Semana-41/cotizacion_1791273057765_miguel_angel_cortes_cruz.html";
-const FECHA_PAUTADA = "";
-const HORA_PAUTADA = "";
+const URL_FALLBACK = "https://nando-set.github.io/Aluze/cotizaciones/2026-Semana-41/cotizacion_9999_cliente_prueba.html";
+const FECHA_PAUTADA = "15/10/2026";
+const HORA_PAUTADA = "16:00";
 
 function obtenerUrl() {
   if (window.location.protocol === "http:" || window.location.protocol === "https:") {
