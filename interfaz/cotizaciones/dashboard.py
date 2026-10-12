@@ -1,10 +1,12 @@
 """
 Dashboard derecho: lista de cotizaciones registradas.
 Agrupadas por semana de creación, ordenadas por día de la visita pautada.
+Migrado a customtkinter.
 """
 import re
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
+import customtkinter as ctk
 import webbrowser
 from datetime import datetime
 
@@ -12,40 +14,46 @@ from config import BASE_DIR
 from core.tarjetas import formatear_fecha_larga
 
 
+# ============================================================
+# COLORES
+# ============================================================
+COLOR_FONDO = "#0f172a"
+COLOR_PANEL = "#1e293b"
+COLOR_INPUT = "#334155"
+COLOR_TEXTO = "#f8fafc"
+COLOR_TEXTO_SEC = "#94a3b8"
+COLOR_ROSA = "#973359"
+COLOR_ROSA_HOVER = "#7f2a4a"
+COLOR_VERDE = "#34d399"
+COLOR_AMARILLO = "#fbbf24"
+COLOR_MORADO = "#a78bfa"
+
+# Botones estilo IA
+BTN_FG = "#f8fafc"
+BTN_TXT = "#334155"
+BTN_HOVER = "#e2e8f0"
+
+BTN_PELIGRO_FG = "#f1f5f9"
+BTN_PELIGRO_TXT = "#b91c1c"
+BTN_PELIGRO_HOVER = "#fee2e2"
+
+
 def crear_dashboard(app):
     """Crea el canvas y el frame del dashboard."""
-    tk.Label(app.main_panel, text="REGISTRO DE COTIZACIONES",
-             bg="#0f172a", fg="#f8fafc",
-             font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(0, 10))
+    ctk.CTkLabel(app.main_panel, text="REGISTRO DE COTIZACIONES",
+                 text_color=COLOR_TEXTO,
+                 font=("Segoe UI", 16, "bold"),
+                 anchor="w").pack(fill=tk.X, pady=(0, 12))
 
-    contenedor = tk.Frame(app.main_panel, bg="#0f172a")
-    contenedor.pack(fill=tk.BOTH, expand=True)
-
-    app.canvas_dash = tk.Canvas(contenedor, bg="#0f172a", highlightthickness=0, bd=0)
-    app.scrollbar_dash = ttk.Scrollbar(contenedor, orient="vertical", command=app.canvas_dash.yview)
-    app.cards_frame = tk.Frame(app.canvas_dash, bg="#0f172a")
-
-    app.cards_frame.bind(
-        "<Configure>",
-        lambda e: app.canvas_dash.configure(scrollregion=app.canvas_dash.bbox("all"))
+    # ScrollableFrame nativo de customtkinter
+    app.cards_frame = ctk.CTkScrollableFrame(
+        app.main_panel,
+        fg_color=COLOR_FONDO,
+        corner_radius=0,
+        scrollbar_button_color=COLOR_INPUT,
+        scrollbar_button_hover_color="#475569",
     )
-    app.canvas_dash.create_window((0, 0), window=app.cards_frame, anchor="nw")
-    app.canvas_dash.configure(yscrollcommand=app.scrollbar_dash.set)
-
-    app.canvas_dash.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    app.scrollbar_dash.pack(side=tk.RIGHT, fill=tk.Y)
-
-    def _on_mousewheel(event):
-        app.canvas_dash.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    def _bind_mousewheel(_):
-        app.canvas_dash.bind_all("<MouseWheel>", _on_mousewheel)
-
-    def _unbind_mousewheel(_):
-        app.canvas_dash.unbind_all("<MouseWheel>")
-
-    app.canvas_dash.bind("<Enter>", _bind_mousewheel)
-    app.canvas_dash.bind("<Leave>", _unbind_mousewheel)
+    app.cards_frame.pack(fill=tk.BOTH, expand=True)
 
 
 def cargar_registros(app):
@@ -53,16 +61,19 @@ def cargar_registros(app):
     from core.datos import leer_registros
     from core.tarjetas import obtener_semana_iso
 
+    # Limpiar el frame
     for w in app.cards_frame.winfo_children():
         w.destroy()
 
     registros = leer_registros()
     if not registros:
-        tk.Label(app.cards_frame, text="No hay cotizaciones registradas aún.",
-                 bg="#0f172a", fg="#64748b", font=("Segoe UI", 11)).pack(anchor="w", pady=20)
+        ctk.CTkLabel(app.cards_frame,
+                     text="No hay cotizaciones registradas aún.",
+                     text_color="#64748b",
+                     font=("Segoe UI", 12)).pack(anchor="w", pady=20)
         return
 
-    # --- Agrupar por semana ISO (fecha de creación) ---
+    # --- Agrupar por semana ISO ---
     semanas = {}
     for reg in registros:
         try:
@@ -85,33 +96,37 @@ def cargar_registros(app):
         cantidad = len(info["registros"])
 
         # Encabezado de la semana
-        header_sem = tk.Frame(app.cards_frame, bg="#0f172a")
-        header_sem.pack(fill=tk.X, pady=(14, 6), padx=5)
+        header_sem = ctk.CTkFrame(app.cards_frame, fg_color=COLOR_FONDO, corner_radius=0)
+        header_sem.pack(fill=tk.X, pady=(14, 6))
 
-        tk.Label(header_sem, text=f"📅 {clave}",
-                 bg="#0f172a", fg="#fbbf24",
-                 font=("Segoe UI", 12, "bold")).pack(side=tk.LEFT)
+        ctk.CTkLabel(header_sem, text=f"📅 {clave}",
+                     text_color=COLOR_AMARILLO,
+                     font=("Segoe UI", 13, "bold")).pack(side=tk.LEFT)
 
-        tk.Label(header_sem, text=f"({lunes_str} → {domingo_str})",
-                 bg="#0f172a", fg="#64748b",
-                 font=("Segoe UI", 9)).pack(side=tk.LEFT, padx=(10, 0))
+        ctk.CTkLabel(header_sem, text=f"({lunes_str} → {domingo_str})",
+                     text_color="#64748b",
+                     font=("Segoe UI", 10)).pack(side=tk.LEFT, padx=(10, 0))
 
-        tk.Label(header_sem, text=f"{cantidad} cotización{'es' if cantidad != 1 else ''}",
-                 bg="#1e293b", fg="#cbd5e1",
-                 font=("Segoe UI", 8, "bold"),
-                 padx=8, pady=2).pack(side=tk.RIGHT)
+        ctk.CTkLabel(header_sem,
+                     text=f"{cantidad} cotización{'es' if cantidad != 1 else ''}",
+                     text_color="#cbd5e1",
+                     fg_color=COLOR_PANEL,
+                     font=("Segoe UI", 9, "bold"),
+                     corner_radius=10,
+                     padx=10, pady=4).pack(side=tk.RIGHT)
 
         # --- Agrupar por día de la fecha pautada ---
         grupos_dias = _agrupar_por_dia(info["registros"])
 
         for grupo in grupos_dias:
             # Encabezado del día
-            header_dia = tk.Frame(app.cards_frame, bg="#0f172a")
-            header_dia.pack(fill=tk.X, pady=(8, 4), padx=5)
+            header_dia = ctk.CTkFrame(app.cards_frame, fg_color=COLOR_FONDO, corner_radius=0)
+            header_dia.pack(fill=tk.X, pady=(10, 4))
 
-            tk.Label(header_dia, text=grupo["encabezado"],
-                     bg="#0f172a", fg="#973359",
-                     font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+            ctk.CTkLabel(header_dia, text=grupo["encabezado"],
+                         text_color=COLOR_ROSA,
+                         font=("Segoe UI", 11, "bold"),
+                         anchor="w").pack(fill=tk.X)
 
             # Tarjetas del día
             for reg in grupo["registros"]:
@@ -147,7 +162,6 @@ def _agrupar_por_dia(registros):
         fecha_dt = info["fecha_dt"]
         encabezado = f"📆 {formatear_fecha_larga(fecha_dt.strftime('%d/%m/%Y'))}"
 
-        # Ordenar por hora pautada
         regs_dia = sorted(
             info["registros"],
             key=lambda r: r[9].strip() if len(r) > 9 and r[9].strip() else "99:99"
@@ -186,76 +200,112 @@ def _dibujar_tarjeta(app, reg):
     ruta_html = reg[12] if len(reg) > 12 else ""
     link_ind = reg[13] if len(reg) > 13 else ""
 
-    card = tk.Frame(app.cards_frame, bg="#1e293b", padx=15, pady=12)
-    card.pack(fill=tk.X, pady=6, padx=5)
+    card = ctk.CTkFrame(app.cards_frame, fg_color=COLOR_PANEL,
+                        corner_radius=12)
+    card.pack(fill=tk.X, pady=6, padx=4)
+
+    # Contenido interno con padding
+    inner = ctk.CTkFrame(card, fg_color=COLOR_PANEL, corner_radius=0)
+    inner.pack(fill=tk.X, padx=16, pady=14)
 
     # --- Fila 1: Cliente + Monto ---
-    top = tk.Frame(card, bg="#1e293b")
+    top = ctk.CTkFrame(inner, fg_color=COLOR_PANEL, corner_radius=0)
     top.pack(fill=tk.X)
 
-    tk.Label(top, text=cliente, bg="#1e293b", fg="#f8fafc",
-             font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
-    tk.Label(top, text=monto, bg="#1e293b", fg="#34d399",
-             font=("Segoe UI", 11, "bold")).pack(side=tk.RIGHT)
+    ctk.CTkLabel(top, text=cliente,
+                 text_color=COLOR_TEXTO,
+                 font=("Segoe UI", 13, "bold"),
+                 anchor="w").pack(side=tk.LEFT)
 
-    # --- Fila 2: Fecha pautada destacada (si existe) ---
+    ctk.CTkLabel(top, text=monto,
+                 text_color=COLOR_VERDE,
+                 font=("Segoe UI", 13, "bold"),
+                 anchor="e").pack(side=tk.RIGHT)
+
+    # --- Fila 2: Fecha pautada destacada ---
     if fecha_pautada:
         fecha_larga = formatear_fecha_larga(fecha_pautada)
-        texto_fecha = f"📅 {fecha_larga}"
+        texto_fecha = f"📅  {fecha_larga}"
         if hora_pautada:
             texto_fecha += f" · {hora_pautada}"
 
-        frame_fecha = tk.Frame(card, bg="#973359", padx=8, pady=4)
-        frame_fecha.pack(fill=tk.X, pady=(6, 4))
-        tk.Label(frame_fecha, text=texto_fecha, bg="#973359", fg="#ffffff",
-                 font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        frame_fecha = ctk.CTkFrame(inner, fg_color=COLOR_ROSA,
+                                    corner_radius=8)
+        frame_fecha.pack(fill=tk.X, pady=(8, 6))
+
+        ctk.CTkLabel(frame_fecha, text=texto_fecha,
+                     text_color="#ffffff",
+                     font=("Segoe UI", 11, "bold"),
+                     anchor="w").pack(fill=tk.X, padx=12, pady=6)
 
     # --- Fila 3: Detalles ---
-    tk.Label(card, text=f"📦 {concepto} | 📞 {telefono} | 🗓️ Creada: {fecha}",
-             bg="#1e293b", fg="#94a3b8", font=("Segoe UI", 9)).pack(anchor="w", pady=(4, 4))
+    ctk.CTkLabel(inner,
+                 text=f"📦  {concepto}   ·   📞  {telefono}   ·   🗓️  {fecha}",
+                 text_color=COLOR_TEXTO_SEC,
+                 font=("Segoe UI", 10),
+                 anchor="w").pack(fill=tk.X, pady=(2, 4))
 
     # --- Notas del cliente ---
     if notas_cliente:
-        tk.Label(card, text=f"📝 {notas_cliente[:100]}{'...' if len(notas_cliente) > 100 else ''}",
-                 bg="#1e293b", fg="#fbbf24",
-                 font=("Segoe UI", 9, "italic")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(inner,
+                     text=f"📝  {notas_cliente[:100]}{'...' if len(notas_cliente) > 100 else ''}",
+                     text_color=COLOR_AMARILLO,
+                     font=("Segoe UI", 10, "italic"),
+                     anchor="w",
+                     wraplength=600,
+                     justify="left").pack(fill=tk.X, pady=(2, 2))
 
-    # --- Notas internas (color distinto) ---
+    # --- Notas internas ---
     if notas_internas:
-        tk.Label(card, text=f"🔒 {notas_internas[:100]}{'...' if len(notas_internas) > 100 else ''}",
-                 bg="#1e293b", fg="#a78bfa",
-                 font=("Segoe UI", 9, "italic")).pack(anchor="w", pady=(0, 6))
+        ctk.CTkLabel(inner,
+                     text=f"🔒  {notas_internas[:100]}{'...' if len(notas_internas) > 100 else ''}",
+                     text_color=COLOR_MORADO,
+                     font=("Segoe UI", 10, "italic"),
+                     anchor="w",
+                     wraplength=600,
+                     justify="left").pack(fill=tk.X, pady=(2, 4))
 
     # --- Botones ---
-    btn_frame = tk.Frame(card, bg="#1e293b")
-    btn_frame.pack(anchor="w", pady=(4, 0))
+    btn_frame = ctk.CTkFrame(inner, fg_color=COLOR_PANEL, corner_radius=0)
+    btn_frame.pack(fill=tk.X, pady=(8, 0))
 
     # Editar
-    tk.Button(btn_frame, text="✏️ Editar", bg="#7c3aed", fg="white",
-              font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
-              command=lambda i=id_reg: app.editar_cotizacion(i)).pack(side=tk.LEFT, padx=(0, 6))
+    ctk.CTkButton(btn_frame, text="✏️  Editar",
+                  command=lambda i=id_reg: app.editar_cotizacion(i),
+                  fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                  corner_radius=8, height=30, width=90,
+                  font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 4))
 
     # Abrir
-    tk.Button(btn_frame, text="🌐 Abrir", bg="#0ea5e9", fg="white",
-              font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
-              command=lambda r=ruta_html: abrir_html(app, r)).pack(side=tk.LEFT, padx=(0, 6))
+    ctk.CTkButton(btn_frame, text="🌐  Abrir",
+                  command=lambda r=ruta_html: abrir_html(app, r),
+                  fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                  corner_radius=8, height=30, width=90,
+                  font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 4))
 
     # Copiar link
     if link_ind:
-        tk.Button(btn_frame, text="📋 Link", bg="#973359", fg="white",
-                  font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
-                  command=lambda u=link_ind: copiar_al_portapapeles(app, u)).pack(side=tk.LEFT, padx=(0, 6))
+        ctk.CTkButton(btn_frame, text="📋  Link",
+                      command=lambda u=link_ind: copiar_al_portapapeles(app, u),
+                      fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                      corner_radius=8, height=30, width=80,
+                      font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 4))
 
     # WhatsApp
     tel_limpio = re.sub(r'\D', '', telefono)
-    tk.Button(btn_frame, text="💬 WA", bg="#16a34a", fg="white",
-              font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
-              command=lambda t=tel_limpio: webbrowser.open(f"https://wa.me/{t}")).pack(side=tk.LEFT, padx=(0, 6))
+    ctk.CTkButton(btn_frame, text="💬  WA",
+                  command=lambda t=tel_limpio: webbrowser.open(f"https://wa.me/{t}"),
+                  fg_color=BTN_FG, text_color=BTN_TXT, hover_color=BTN_HOVER,
+                  corner_radius=8, height=30, width=70,
+                  font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 4))
 
     # Eliminar
-    tk.Button(btn_frame, text="🗑️", bg="#ef4444", fg="white",
-              font=("Segoe UI", 8, "bold"), relief=tk.FLAT,
-              command=lambda i=id_reg: app.eliminar_registro(i)).pack(side=tk.LEFT)
+    ctk.CTkButton(btn_frame, text="🗑️",
+                  command=lambda i=id_reg: app.eliminar_registro(i),
+                  fg_color=BTN_PELIGRO_FG, text_color=BTN_PELIGRO_TXT,
+                  hover_color=BTN_PELIGRO_HOVER,
+                  corner_radius=8, height=30, width=40,
+                  font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
 
 
 # ============================================================
