@@ -1,6 +1,8 @@
 """
 Generador del panel central (index.html).
 Aquí vive TODO lo relacionado con el listado general de cotizaciones.
+Agrupación por semana de la FECHA PAUTADA (o de creación si no hay).
+Semanas colapsadas excepto la actual.
 """
 import html
 from datetime import datetime
@@ -15,14 +17,30 @@ from core.tarjetas import (
 def regenerar_index():
     registros = leer_registros()
 
-    # ---- Agrupar por semana ISO (de creación) ----
+    # --- Clave de la semana actual ---
+    year_actual, week_actual, _, _ = obtener_semana_iso()
+    clave_actual = f"{year_actual}-Semana-{week_actual:02d}"
+
+    # ---- Agrupar por semana de la fecha pautada (o de creación si no hay) ----
     semanas = {}
     for reg in registros:
-        try:
-            fecha_dt = datetime.strptime(reg[1], "%d/%m/%Y %H:%M")
-        except Exception:
-            fecha_dt = datetime.now()
-        year, week, lunes, domingo = obtener_semana_iso(fecha_dt)
+        fecha_pautada = reg[8].strip() if len(reg) > 8 else ""
+
+        if fecha_pautada:
+            try:
+                fecha_para_agrupar = datetime.strptime(fecha_pautada, "%d/%m/%Y")
+            except Exception:
+                try:
+                    fecha_para_agrupar = datetime.strptime(reg[1], "%d/%m/%Y %H:%M")
+                except Exception:
+                    fecha_para_agrupar = datetime.now()
+        else:
+            try:
+                fecha_para_agrupar = datetime.strptime(reg[1], "%d/%m/%Y %H:%M")
+            except Exception:
+                fecha_para_agrupar = datetime.now()
+
+        year, week, lunes, domingo = obtener_semana_iso(fecha_para_agrupar)
         clave = f"{year}-Semana-{week:02d}"
         semanas.setdefault(clave, {
             "lunes": lunes,
@@ -55,13 +73,12 @@ def regenerar_index():
         domingo = info["domingo"].strftime("%d/%m/%Y")
         cantidad = len(info["registros"])
 
-        year_actual, week_actual, _, _ = obtener_semana_iso()
-        es_actual = clave == f"{year_actual}-Semana-{week_actual:02d}"
+        es_actual = (clave == clave_actual)
         clase_semana = "semana semana-actual" if es_actual else "semana"
 
         mes_clave = info["lunes"].strftime("%Y-%m")
 
-        # ---- Dentro de la semana: agrupar por día de la fecha pautada ----
+        # ---- Dentro de la semana: agrupar por día ----
         grupos_dias = _agrupar_por_dia(info["registros"])
 
         bloques_dias = []
@@ -81,12 +98,23 @@ def regenerar_index():
               </div>
             </div>""")
 
+        # --- Estructura colapsable ---
+        # La semana actual empieza abierta, las demás colapsadas.
+        clase_abierta = "abierta" if es_actual else ""
+        icono = "▼" if es_actual else "▶"
+        etiqueta_actual = ' <span class="etiqueta-actual">ACTUAL</span>' if es_actual else ""
+
         bloques.append(f"""
-        <section class="{clase_semana}" data-semana="{clave}" data-mes="{mes_clave}">
-          <h2>📅 {clave} <span class="rango">({lunes} → {domingo})</span>
+        <section class="{clase_semana} {clase_abierta}" data-semana="{clave}" data-mes="{mes_clave}">
+          <h2 onclick="toggleSemana(this)">
+            <span class="icono-toggle">{icono}</span>
+            📅 {clave}{etiqueta_actual}
+            <span class="rango">({lunes} → {domingo})</span>
             <span class="badge">{cantidad} cotización{"es" if cantidad != 1 else ""}</span>
           </h2>
-          {''.join(bloques_dias)}
+          <div class="contenido-semana">
+            {''.join(bloques_dias)}
+          </div>
         </section>""")
 
     mes_actual = datetime.now().strftime("%Y-%m")
@@ -125,15 +153,53 @@ def regenerar_index():
   .filtros button:hover {{ border-color: #973359; color: #f8fafc; }}
   .filtros button.activo {{ background: #973359; border-color: #973359; color: #fff; }}
 
-  .semana {{ margin-bottom: 40px; }}
-  .semana > h2 {{ font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }}
+  /* SEMANAS COLAPSABLES */
+  .semana {{ margin-bottom: 20px; }}
+  .semana > h2 {{
+    font-size: 16px; color: #f8fafc;
+    border-left: 4px solid #973359;
+    padding: 12px 12px 12px 10px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: #1e293b;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }}
+  .semana > h2:hover {{ background: #253347; }}
   .semana-actual > h2 {{ border-left-color: #34d399; }}
+  .icono-toggle {{
+    font-size: 12px;
+    color: #fbbf24;
+    font-weight: bold;
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+  }}
+  .etiqueta-actual {{
+    background: #064e3b;
+    color: #6ee7b7;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }}
   .rango {{ font-size: 12px; color: #94a3b8; font-weight: 400; }}
-  .badge {{ background: #334155; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; }}
+  .badge {{ background: #334155; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; margin-left: auto; }}
   .semana-actual .badge {{ background: #064e3b; color: #6ee7b7; }}
 
+  .contenido-semana {{
+    display: none;
+    padding-left: 12px;
+  }}
+  .semana.abierta .contenido-semana {{
+    display: block;
+  }}
+
   /* GRUPOS POR DÍA */
-  .dia {{ margin-bottom: 24px; }}
+  .dia {{ margin-bottom: 20px; }}
   .dia h3 {{ font-size: 13px; color: #fbbf24; margin: 0 0 10px 0;
             padding-left: 8px; border-left: 3px solid #fbbf24;
             font-weight: 700; letter-spacing: 0.5px; }}
@@ -146,7 +212,6 @@ def regenerar_index():
   .cliente {{ font-weight: 700; color: #f8fafc; font-size: 15px; }}
   .monto {{ color: #34d399; font-weight: 700; font-size: 15px; white-space: nowrap; }}
 
-  /* FECHA PAUTADA DESTACADA EN EL INDEX */
   .cot-fecha {{ background: linear-gradient(135deg, #973359, #7f2a4a);
                color: #fff; padding: 6px 10px; border-radius: 6px;
                font-size: 13px; font-weight: 700; margin-bottom: 10px;
@@ -191,9 +256,17 @@ def regenerar_index():
   <footer>Persianas Aluze · Generado automáticamente</footer>
 
   <script>
-    const SEMANA_ACTUAL = "{datetime.now().isocalendar()[0]}-Semana-{datetime.now().isocalendar()[1]:02d}";
+    const SEMANA_ACTUAL = "{year_actual}-Semana-{week_actual:02d}";
     const MES_ACTUAL = "{mes_actual}";
     let filtroActual = "todas";
+
+    // ---- Colapsar / expandir semanas ----
+    function toggleSemana(h2) {{
+      const semana = h2.closest('.semana');
+      semana.classList.toggle('abierta');
+      const icono = semana.querySelector('.icono-toggle');
+      if (icono) icono.textContent = semana.classList.contains('abierta') ? '▼' : '▶';
+    }}
 
     function setFiltro(filtro, boton) {{
       filtroActual = filtro;
@@ -226,6 +299,13 @@ def regenerar_index():
           dia.style.display = visibles > 0 ? '' : 'none';
         }});
 
+        // Si hay búsqueda activa, forzar apertura de las semanas que coinciden
+        if (q && tarjetasVisibles > 0) {{
+          sec.classList.add('abierta');
+          const icono = sec.querySelector('.icono-toggle');
+          if (icono) icono.textContent = '▼';
+        }}
+
         sec.style.display = (pasaFiltro && tarjetasVisibles > 0) ? '' : 'none';
       }});
     }}
@@ -240,28 +320,15 @@ def regenerar_index():
 # AGRUPAR POR DÍA DENTRO DE UNA SEMANA
 # ============================================================
 def _agrupar_por_dia(registros):
-    """
-    Recibe los registros de una semana.
-    Devuelve una lista de grupos:
-    [
-      {"encabezado": "📅 Sin fecha pautada", "registros": [...]},
-      {"encabezado": "📆 Lunes 13 de octubre", "registros": [...]},
-      ...
-    ]
-    Los grupos se ordenan por la fecha pautada (ascendente).
-    Las cotizaciones sin fecha pautada van al final.
-    """
+    """Agrupa los registros de una semana por día de la fecha pautada."""
     sin_fecha = []
     con_fecha = {}
 
     for reg in registros:
-        # FechaPautada está en índice 8
         fecha_pautada = reg[8].strip() if len(reg) > 8 else ""
-
         if not fecha_pautada:
             sin_fecha.append(reg)
             continue
-
         try:
             fp_dt = datetime.strptime(fecha_pautada, "%d/%m/%Y")
             clave_dia = fp_dt.strftime("%Y-%m-%d")
@@ -270,29 +337,23 @@ def _agrupar_por_dia(registros):
                 "registros": []
             })["registros"].append(reg)
         except Exception:
-            # Si la fecha está mal, tratarla como sin fecha
             sin_fecha.append(reg)
 
     grupos = []
-
-    # Primero los días con fecha, ordenados ascendente
     for clave in sorted(con_fecha.keys()):
         info = con_fecha[clave]
         fecha_dt = info["fecha_dt"]
         encabezado = f"📆 {formatear_fecha_larga(fecha_dt.strftime('%d/%m/%Y'))}"
 
-        # Ordenar registros de ese día por hora pautada
         regs_dia = sorted(
             info["registros"],
             key=lambda r: r[9].strip() if len(r) > 9 and r[9].strip() else "99:99"
         )
-
         grupos.append({
             "encabezado": encabezado,
             "registros": regs_dia
         })
 
-    # Al final, los sin fecha
     if sin_fecha:
         grupos.append({
             "encabezado": "📅 Sin fecha pautada",
@@ -324,7 +385,6 @@ def _tarjeta_cotizacion_html(reg):
     telefono_e = html.escape(telefono)
     notas_e = html.escape(notas_cliente[:100]) if notas_cliente else ""
 
-    # Bloque de fecha pautada (solo si existe)
     if fecha_pautada:
         fecha_larga = formatear_fecha_larga(fecha_pautada)
         texto_fecha = f"📅 {fecha_larga}"

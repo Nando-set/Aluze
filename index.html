@@ -32,15 +32,53 @@
   .filtros button:hover { border-color: #973359; color: #f8fafc; }
   .filtros button.activo { background: #973359; border-color: #973359; color: #fff; }
 
-  .semana { margin-bottom: 40px; }
-  .semana > h2 { font-size: 16px; color: #f8fafc; border-left: 4px solid #973359; padding-left: 10px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  /* SEMANAS COLAPSABLES */
+  .semana { margin-bottom: 20px; }
+  .semana > h2 {
+    font-size: 16px; color: #f8fafc;
+    border-left: 4px solid #973359;
+    padding: 12px 12px 12px 10px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: #1e293b;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .semana > h2:hover { background: #253347; }
   .semana-actual > h2 { border-left-color: #34d399; }
+  .icono-toggle {
+    font-size: 12px;
+    color: #fbbf24;
+    font-weight: bold;
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+  }
+  .etiqueta-actual {
+    background: #064e3b;
+    color: #6ee7b7;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
   .rango { font-size: 12px; color: #94a3b8; font-weight: 400; }
-  .badge { background: #334155; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+  .badge { background: #334155; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; margin-left: auto; }
   .semana-actual .badge { background: #064e3b; color: #6ee7b7; }
 
+  .contenido-semana {
+    display: none;
+    padding-left: 12px;
+  }
+  .semana.abierta .contenido-semana {
+    display: block;
+  }
+
   /* GRUPOS POR DÍA */
-  .dia { margin-bottom: 24px; }
+  .dia { margin-bottom: 20px; }
   .dia h3 { font-size: 13px; color: #fbbf24; margin: 0 0 10px 0;
             padding-left: 8px; border-left: 3px solid #fbbf24;
             font-weight: 700; letter-spacing: 0.5px; }
@@ -53,7 +91,6 @@
   .cliente { font-weight: 700; color: #f8fafc; font-size: 15px; }
   .monto { color: #34d399; font-weight: 700; font-size: 15px; white-space: nowrap; }
 
-  /* FECHA PAUTADA DESTACADA EN EL INDEX */
   .cot-fecha { background: linear-gradient(135deg, #973359, #7f2a4a);
                color: #fff; padding: 6px 10px; border-radius: 6px;
                font-size: 13px; font-weight: 700; margin-bottom: 10px;
@@ -70,14 +107,14 @@
   <div class="header">
     <img src="assets/LogoAluzeClaro.png" alt="Aluze" class="logo-img">
     <h1>Panel de Cotizaciones</h1>
-    <p>Persianas &amp; Decoración · Actualizado el 18/10/2026 20:09</p>
+    <p>Persianas &amp; Decoración · Actualizado el 18/10/2026 20:18</p>
     <div class="top-nav">
       <a href="catalogo.html">🛍️ Ver catálogo de productos</a>
     </div>
     <div class="contador">
       <div class="stat"><span class="num">10</span><span class="lbl">Total</span></div>
       <div class="stat destacado"><span class="num">3</span><span class="lbl">Pautadas esta semana</span></div>
-      <div class="stat"><span class="num">2</span><span class="lbl">Semanas</span></div>
+      <div class="stat"><span class="num">3</span><span class="lbl">Semanas</span></div>
     </div>
   </div>
 
@@ -94,11 +131,43 @@
 
   <div id="contenido">
     
-        <section class="semana semana-actual" data-semana="2026-Semana-42" data-mes="2026-10">
-          <h2>📅 2026-Semana-42 <span class="rango">(12/10/2026 → 18/10/2026)</span>
-            <span class="badge">4 cotizaciónes</span>
+        <section class="semana " data-semana="2026-Semana-43" data-mes="2026-10">
+          <h2 onclick="toggleSemana(this)">
+            <span class="icono-toggle">▶</span>
+            📅 2026-Semana-43
+            <span class="rango">(19/10/2026 → 25/10/2026)</span>
+            <span class="badge">1 cotización</span>
           </h2>
-          
+          <div class="contenido-semana">
+            
+            <div class="dia">
+              <h3>📆 Miércoles 21 de octubre</h3>
+              <div class="grid">
+                
+    <a class="cot-card" href="cotizaciones/2026-Semana-42/cotizacion_1792324908948_iliana.html" target="_blank">
+      <div class="cot-head">
+        <span class="cliente">👤 Iliana</span>
+        <span class="monto">$27,690.00 MXN Aprox</span>
+      </div>
+      <div class="cot-fecha">📅 Miércoles 21 de octubre · 10:00 am</div>
+      <div class="cot-info">📦 Sheer BlackOut</div>
+      <div class="cot-info">📞 3313330989 &nbsp;|&nbsp; 🗓️ Creada: 18/10/2026 08:01</div>
+      
+      <div class="cot-cta">🔗 Ver cotización completa →</div>
+    </a>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="semana semana-actual abierta" data-semana="2026-Semana-42" data-mes="2026-10">
+          <h2 onclick="toggleSemana(this)">
+            <span class="icono-toggle">▼</span>
+            📅 2026-Semana-42 <span class="etiqueta-actual">ACTUAL</span>
+            <span class="rango">(12/10/2026 → 18/10/2026)</span>
+            <span class="badge">3 cotizaciónes</span>
+          </h2>
+          <div class="contenido-semana">
+            
             <div class="dia">
               <h3>📆 Martes 13 de octubre</h3>
               <div class="grid">
@@ -151,29 +220,17 @@ Los sabado esta dispon...</div>
     </a>
               </div>
             </div>
-            <div class="dia">
-              <h3>📆 Miércoles 21 de octubre</h3>
-              <div class="grid">
-                
-    <a class="cot-card" href="cotizaciones/2026-Semana-42/cotizacion_1792324908948_iliana.html" target="_blank">
-      <div class="cot-head">
-        <span class="cliente">👤 Iliana</span>
-        <span class="monto">$27,690.00 MXN Aprox</span>
-      </div>
-      <div class="cot-fecha">📅 Miércoles 21 de octubre · 10:00 am</div>
-      <div class="cot-info">📦 Sheer BlackOut</div>
-      <div class="cot-info">📞 3313330989 &nbsp;|&nbsp; 🗓️ Creada: 18/10/2026 08:01</div>
-      
-      <div class="cot-cta">🔗 Ver cotización completa →</div>
-    </a>
-              </div>
-            </div>
+          </div>
         </section>
-        <section class="semana" data-semana="2026-Semana-41" data-mes="2026-10">
-          <h2>📅 2026-Semana-41 <span class="rango">(05/10/2026 → 11/10/2026)</span>
+        <section class="semana " data-semana="2026-Semana-41" data-mes="2026-10">
+          <h2 onclick="toggleSemana(this)">
+            <span class="icono-toggle">▶</span>
+            📅 2026-Semana-41
+            <span class="rango">(05/10/2026 → 11/10/2026)</span>
             <span class="badge">6 cotizaciónes</span>
           </h2>
-          
+          <div class="contenido-semana">
+            
             <div class="dia">
               <h3>📅 Sin fecha pautada</h3>
               <div class="grid">
@@ -249,6 +306,7 @@ La cliente dice que no hay señal
     </a>
               </div>
             </div>
+          </div>
         </section>
   </div>
   <footer>Persianas Aluze · Generado automáticamente</footer>
@@ -257,6 +315,14 @@ La cliente dice que no hay señal
     const SEMANA_ACTUAL = "2026-Semana-42";
     const MES_ACTUAL = "2026-10";
     let filtroActual = "todas";
+
+    // ---- Colapsar / expandir semanas ----
+    function toggleSemana(h2) {
+      const semana = h2.closest('.semana');
+      semana.classList.toggle('abierta');
+      const icono = semana.querySelector('.icono-toggle');
+      if (icono) icono.textContent = semana.classList.contains('abierta') ? '▼' : '▶';
+    }
 
     function setFiltro(filtro, boton) {
       filtroActual = filtro;
@@ -288,6 +354,13 @@ La cliente dice que no hay señal
           const visibles = dia.querySelectorAll('.cot-card:not([style*="display: none"])').length;
           dia.style.display = visibles > 0 ? '' : 'none';
         });
+
+        // Si hay búsqueda activa, forzar apertura de las semanas que coinciden
+        if (q && tarjetasVisibles > 0) {
+          sec.classList.add('abierta');
+          const icono = sec.querySelector('.icono-toggle');
+          if (icono) icono.textContent = '▼';
+        }
 
         sec.style.display = (pasaFiltro && tarjetasVisibles > 0) ? '' : 'none';
       });
