@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cotización - Iliana | Aluze</title>
+<title>Cotización - Alam | Aluze</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -76,39 +76,43 @@
   
   <div class="fecha-pautada">
     <div class="fecha-pautada-label">📅 Visita pautada</div>
-    <div class="fecha-pautada-valor">Miércoles 21 de octubre · 10:00 am</div>
+    <div class="fecha-pautada-valor">Miércoles 21 de octubre · 1:00 pm</div>
   </div>
 
   <div class="section">
     <div class="label">Cliente</div>
-    <div class="value-row"><span class="value" id="val-cliente">Iliana</span></div>
+    <div class="value-row"><span class="value" id="val-cliente">Alam</span></div>
   </div>
   <div class="section">
     <div class="label">Concepto / Sistema</div>
-    <div class="value-row"><span class="value" id="val-concepto">Sheer BlackOut</span></div>
+    <div class="value-row"><span class="value" id="val-concepto">Sheer Basic</span></div>
   </div>
   <div class="section">
     <div class="label">Teléfono y Contacto</div>
     <div class="value-row">
-      <span class="value" id="val-tel">3313330989</span>
+      <span class="value" id="val-tel">3319118924</span>
       <button class="btn-action btn-copy" onclick="copiarTexto('val-tel','¡Teléfono copiado!')">📋 Copiar</button>
     </div>
     <div class="actions-row">
-      <a class="btn-action btn-call" href="tel:3313330989">📞 Llamar</a>
-      <a class="btn-action btn-wa" href="https://wa.me/3313330989" target="_blank">💬 WhatsApp</a>
+      <a class="btn-action btn-call" href="tel:3319118924">📞 Llamar</a>
+      <a class="btn-action btn-wa" href="https://wa.me/3319118924" target="_blank">💬 WhatsApp</a>
     </div>
   </div>
   <div class="section">
     <div class="label">Domicilio</div>
     <div class="value-row" style="align-items:flex-start;">
-      <span class="value" id="val-dom">https://maps.app.goo.gl/tTd1xh3soJXpvAJp7</span>
+      <span class="value" id="val-dom">Calle Andromeda 4256 B, Interior 3,
+Estrella Polar Y Calle Pleyades
+Residencial La Calma,
+Zapopan, C.P. 45070
+Jalisco, Mexico</span>
       <button class="btn-action btn-copy" onclick="copiarTexto('val-dom','¡Domicilio copiado!')">📋 Copiar</button>
     </div>
-    <a class="map-link" href="https://maps.app.goo.gl/tTd1xh3soJXpvAJp7" target="_blank">📍 Ver ubicación compartida</a>
+    <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Calle%20Andromeda%204256%20B%2C%20Interior%203%2C%0AEstrella%20Polar%20Y%20Calle%20Pleyades%0AResidencial%20La%20Calma%2C%0AZapopan%2C%20C.P.%2045070%0AJalisco%2C%20Mexico" target="_blank">📍 Abrir en Google Maps</a>
   </div>
   <div class="section">
     <div class="label">Detalles de la Cotización</div>
-    <div class="box" id="val-detalles">7 Pesianas</div>
+    <div class="box" id="val-detalles">6 Persianas</div>
   </div>
   
   <div class="section" style="display:none;">
@@ -116,7 +120,7 @@
   </div>
   <div class="price-box">
     <div class="price-label">Monto Aproximado</div>
-    <div class="price-value" id="val-monto">$27,690.00 MXN Aprox</div>
+    <div class="price-value" id="val-monto">$9,480.22 MXN (se aplico un 10% de descuento)</div>
   </div>
   <button class="btn-universal-copy" onclick="copiarTodo()">📋 Copiar toda la información para chat</button>
 
@@ -129,13 +133,13 @@
     </a>
   </div>
 
-  <div class="footer">Generado el 18/10/2026 08:01 | Persianas Aluze</div>
+  <div class="footer">Generado el 20/10/2026 19:19 | Persianas Aluze</div>
 </div>
 <div id="toast" class="toast">¡Copiado!</div>
 <script>
-const URL_FALLBACK = "https://nando-set.github.io/Aluze/cotizaciones/2026-Semana-42/cotizacion_1792324908948_iliana.html";
+const URL_FALLBACK = "https://nando-set.github.io/Aluze/cotizaciones/2026-Semana-43/cotizacion_1792538363736_alam.html";
 const FECHA_PAUTADA = "21/10/2026";
-const HORA_PAUTADA = "10:00 am";
+const HORA_PAUTADA = "1:00 pm";
 
 function obtenerUrl() {
   if (window.location.protocol === "http:" || window.location.protocol === "https:") {
