@@ -49,3 +49,14 @@ CATALOGO_PAGINAS = CARPETA_CATALOGO / "paginas"
 CATALOGO_CATEGORIAS = CARPETA_CATALOGO / "categorias.json"
 CATALOGO_MODELOS = CARPETA_CATALOGO / "modelos.json"
 CATALOGO_INDEX = BASE_DIR / "catalogo.html"
+# ============================================================
+# NOTAS DE VENTA
+# ============================================================
+CARPETA_NOTAS = BASE_DIR / "notas"
+NOTAS_DB = CARPETA_NOTAS / "notas_db.json"
+NOTAS_HTML = CARPETA_NOTAS / "html"
+# ============================================================
+# NOTIFICACIONES PUSH (ntfy)
+# ============================================================
+NTFY_TOPIC = "aluze-citas-TfhTmzlhioc8Avzb"
+NTFY_SERVER = "https://ntfy.sh"

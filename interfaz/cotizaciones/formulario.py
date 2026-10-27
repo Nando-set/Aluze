@@ -152,6 +152,20 @@ def crear_formulario(app):
     )
     btn_regenerar.grid(row=0, column=1, sticky="ew", padx=(3, 0))
 
+    # --- Fila 3: Programar recordatorios pendientes ---
+    btn_notificaciones = ctk.CTkButton(
+        footer,
+        text="🔔  Programar recordatorios pendientes",
+        command=app.programar_notificaciones_citas_existentes,
+        fg_color=BTN_SECUNDARIO_FG,
+        text_color=BTN_SECUNDARIO_TXT,
+        hover_color=BTN_SECUNDARIO_HOVER,
+        corner_radius=10,
+        height=34,
+        font=("Segoe UI", 10, "bold"),
+    )
+    btn_notificaciones.pack(fill=tk.X, pady=(0, 6))
+
     # --- Botón peligro ---
     btn_borrar = ctk.CTkButton(
         footer,

@@ -33,6 +33,11 @@ from core.catalogo_datos import (
 from core.imagenes import procesar_imagen
 from core.videos import procesar_video, eliminar_video
 from core.generador_catalogo import regenerar_catalogo
+from core.notas import (
+    inicializar_notas, leer_notas, buscar_nota, siguiente_folio,
+    agregar_nota, actualizar_nota, eliminar_nota, generar_nota_html,
+    calcular_totales, formatear_moneda
+)
 
 from servicios.github import subir_a_github
 
@@ -43,6 +48,9 @@ from interfaz.cotizaciones.ventana_links import VentanaLinks
 
 # Módulo de catálogo
 from interfaz.catalogo import panel as cat_panel
+
+# Módulo de notas
+from interfaz.notas import panel as notas_panel
 
 
 # ============================================================
@@ -75,6 +83,7 @@ def inicializar_estructura():
 
     inicializar_csv()
     inicializar_catalogo()
+    inicializar_notas()
 
 
 class AppAluze:
@@ -103,6 +112,7 @@ class AppAluze:
 
         self._crear_tab_button("cotizaciones", "📝  Cotizaciones")
         self._crear_tab_button("catalogo", "🛍️  Catálogo")
+        self._crear_tab_button("notas", "📄  Notas")
 
         # ============================================================
         # ÁREA DE CONTENIDO
@@ -112,6 +122,7 @@ class AppAluze:
 
         self.vista_cotizaciones = ctk.CTkFrame(self.area_contenido, fg_color=COLOR_FONDO, corner_radius=0)
         self.vista_catalogo = ctk.CTkFrame(self.area_contenido, fg_color=COLOR_FONDO, corner_radius=0)
+        self.vista_notas = ctk.CTkFrame(self.area_contenido, fg_color=COLOR_FONDO, corner_radius=0)
 
         # ============================================================
         # BARRA INFERIOR (botón Subir TODO)
@@ -155,6 +166,13 @@ class AppAluze:
         regenerar_catalogo()
 
         # ============================================================
+        # VISTA DE NOTAS
+        # ============================================================
+        self.nota_actual_folio = None
+        self.items_data = []
+        notas_panel.construir_panel_notas(self)
+
+        # ============================================================
         # MOSTRAR PESTAÑA INICIAL
         # ============================================================
         self._cambiar_tab("cotizaciones")
@@ -172,7 +190,7 @@ class AppAluze:
             hover_color="#334155",
             corner_radius=10,
             height=40,
-            width=180,
+            width=160,
             font=("Segoe UI", 12, "bold"),
         )
         btn.pack(side=tk.LEFT, padx=(0, 8))
@@ -182,6 +200,7 @@ class AppAluze:
         self.tab_activa.set(nombre)
         self.vista_cotizaciones.pack_forget()
         self.vista_catalogo.pack_forget()
+        self.vista_notas.pack_forget()
 
         for n, btn in self.botones_tab.items():
             if n == nombre:
@@ -195,6 +214,8 @@ class AppAluze:
             self.vista_cotizaciones.pack(fill=tk.BOTH, expand=True)
         elif nombre == "catalogo":
             self.vista_catalogo.pack(fill=tk.BOTH, expand=True)
+        elif nombre == "notas":
+            self.vista_notas.pack(fill=tk.BOTH, expand=True)
 
     # ========================================================
     # GUARDAR COTIZACIÓN
@@ -262,6 +283,20 @@ class AppAluze:
                     return
 
             VentanaLinks(self.root, link_individual, URL_BASE)
+
+            # --- Notificación de cita agendada (si hay fecha pautada) ---
+            if fecha_pautada:
+                try:
+                    from core.notificaciones import notificar_cita_agendada
+                    notificar_cita_agendada(
+                        cliente=cliente,
+                        concepto=concepto,
+                        monto=monto,
+                        fecha_pautada=fecha_pautada,
+                        hora_pautada=hora_pautada
+                    )
+                except Exception as e:
+                    print(f"⚠️  No se pudo enviar notificación: {e}")
 
         except Exception as e:
             messagebox.showerror("Error al guardar", f"No se pudo guardar:\n\n{e}")
@@ -883,9 +918,352 @@ class AppAluze:
         cat_panel._cargar_modelo_en_editor(self, modelo_actualizado)
         regenerar_catalogo()
 
+    # ========================================================
+    # NOTAS: MÉTODOS
+    # ========================================================
+    def nueva_nota(self):
+        """Crea una nueva nota en blanco."""
+        self.nota_actual_folio = None
+        self.items_data = []
+        self.var_folio.set(siguiente_folio())
+        self.var_fecha.set(datetime.now().strftime("%d/%m/%Y"))
+        self.var_incluye_iva.set(False)
+        self.var_anticipo.set("0")
+        self.var_autorizo.set("")
+
+        # Limpiar campos del cliente
+        for key in ["nombre", "contacto", "domicilio", "otros"]:
+            self.entries_cliente[key].delete(0, tk.END)
+
+        # Re-renderizar items y totales
+        notas_panel.renderizar_items(self)
+        self.recalcular_totales_nota()
+
+    def guardar_nota_actual(self):
+        """Guarda la nota que está en el editor."""
+        nombre = self.entries_cliente["nombre"].get().strip()
+        if not nombre:
+            messagebox.showerror("Error", "El nombre del cliente es obligatorio.")
+            return
+
+        folio = self.var_folio.get().strip()
+        if not folio:
+            folio = siguiente_folio()
+            self.var_folio.set(folio)
+
+        incluye_iva = self.var_incluye_iva.get()
+        totales = calcular_totales(self.items_data, incluye_iva)
+
+        try:
+            anticipo = float(self.var_anticipo.get() or "0")
+        except ValueError:
+            anticipo = 0.0
+
+        nota = {
+            "folio": folio,
+            "fecha": self.var_fecha.get().strip(),
+            "cliente": {
+                "nombre": nombre,
+                "contacto": self.entries_cliente["contacto"].get().strip(),
+                "domicilio": self.entries_cliente["domicilio"].get().strip(),
+                "otros": self.entries_cliente["otros"].get().strip(),
+            },
+            "items": list(self.items_data),
+            "subtotal": totales["subtotal"],
+            "incluye_iva": incluye_iva,
+            "iva": totales["iva"],
+            "total": totales["total"],
+            "anticipo": anticipo,
+            "saldo": totales["total"] - anticipo,
+            "autorizo": self.var_autorizo.get().strip(),
+        }
+
+        ruta_html = generar_nota_html(nota)
+        if ruta_html:
+            nota["ruta_html"] = ruta_html
+
+        if self.nota_actual_folio:
+            ok, msg = actualizar_nota(self.nota_actual_folio, nota)
+        else:
+            ok, msg = agregar_nota(nota)
+
+        if ok:
+            self.nota_actual_folio = folio
+            messagebox.showinfo("Éxito", f"Nota #{folio} guardada.")
+            self.refrescar_lista_notas()
+            
+            # Regenerar índice
+            try:
+                from core.panel_notas import regenerar_index_notas
+                regenerar_index_notas()
+            except Exception as e:
+                print(f"Error regenerando índice de notas: {e}")
+        else:
+            messagebox.showerror("Error", msg)
+
+    def ver_nota_actual(self):
+        """Abre la nota actual en el navegador."""
+        if not self.nota_actual_folio:
+            messagebox.showwarning("Aviso", "Primero guarda la nota.")
+            return
+
+        nota = buscar_nota(self.nota_actual_folio)
+        if not nota:
+            messagebox.showerror("Error", "Nota no encontrada.")
+            return
+
+        ruta_html = nota.get("ruta_html")
+        if not ruta_html:
+            ruta_html = generar_nota_html(nota)
+            if ruta_html:
+                nota["ruta_html"] = ruta_html
+                actualizar_nota(self.nota_actual_folio, nota)
+
+        if ruta_html:
+            import webbrowser
+            ruta_abs = BASE_DIR / ruta_html
+            if ruta_abs.exists():
+                webbrowser.open(ruta_abs.as_uri())
+            else:
+                messagebox.showerror("Error", "No se encontró el HTML de la nota.")
+        else:
+            messagebox.showerror("Error", "No se pudo generar la nota.")
+
+    def cargar_nota_en_editor(self, folio):
+        """Carga una nota existente en el editor."""
+        nota = buscar_nota(folio)
+        if not nota:
+            return
+
+        self.nota_actual_folio = folio
+        self.var_folio.set(nota.get("folio", ""))
+        self.var_fecha.set(nota.get("fecha", ""))
+
+        cliente = nota.get("cliente", {})
+        self.entries_cliente["nombre"].delete(0, tk.END)
+        self.entries_cliente["nombre"].insert(0, cliente.get("nombre", ""))
+        self.entries_cliente["contacto"].delete(0, tk.END)
+        self.entries_cliente["contacto"].insert(0, cliente.get("contacto", ""))
+        self.entries_cliente["domicilio"].delete(0, tk.END)
+        self.entries_cliente["domicilio"].insert(0, cliente.get("domicilio", ""))
+        self.entries_cliente["otros"].delete(0, tk.END)
+        self.entries_cliente["otros"].insert(0, cliente.get("otros", ""))
+
+        self.items_data = list(nota.get("items", []))
+        self.var_incluye_iva.set(nota.get("incluye_iva", False))
+        self.var_anticipo.set(str(nota.get("anticipo", 0)))
+        self.var_autorizo.set(nota.get("autorizo", ""))
+
+        notas_panel.renderizar_items(self)
+        self.recalcular_totales_nota()
+
+    def limpiar_editor_nota(self):
+        """Limpia el editor de nota (versión legacy, no usada por el panel)."""
+        self.var_folio.set(siguiente_folio())
+        self.var_fecha.set(datetime.now().strftime("%d/%m/%Y"))
+
+        for key in ["nombre", "contacto", "domicilio", "otros"]:
+            self.entries_cliente[key].delete(0, tk.END)
+
+        self.items_data = []
+        self.var_incluye_iva.set(False)
+        self.var_anticipo.set("0")
+        self.var_autorizo.set("")
+
+        notas_panel.renderizar_items(self)
+        self.recalcular_totales_nota()
+
+    def refrescar_lista_notas(self):
+        """Refresca la lista de notas del panel izquierdo."""
+        notas_panel.refrescar_lista(self)
+
+    def agregar_item_nota(self):
+        """Añade un artículo vacío a la nota."""
+        self.items_data.append({
+            "cantidad": 1,
+            "descripcion": "",
+            "medida": "",
+            "precio_unitario": 0,
+        })
+        notas_panel.renderizar_items(self)
+        self.recalcular_totales_nota()
+
+    def eliminar_item_nota(self, indice):
+        """Elimina un artículo de la nota."""
+        if 0 <= indice < len(self.items_data):
+            self.items_data.pop(indice)
+            notas_panel.renderizar_items(self)
+            self.recalcular_totales_nota()
+
+    def actualizar_item_nota(self, indice, campo, valor):
+        """Actualiza un campo de un artículo."""
+        if 0 <= indice < len(self.items_data):
+            self.items_data[indice][campo] = valor
+            self.recalcular_totales_nota()
+
+    def recalcular_totales_nota(self):
+        """Recalcula los totales y actualiza las etiquetas."""
+        incluye_iva = self.var_incluye_iva.get()
+        totales = calcular_totales(self.items_data, incluye_iva)
+
+        self.lbl_subtotal.configure(text=f"Subtotal: {formatear_moneda(totales['subtotal'])}")
+        self.lbl_iva.configure(text=f"IVA: {formatear_moneda(totales['iva'])}")
+        self.lbl_total.configure(text=f"TOTAL: {formatear_moneda(totales['total'])}")
+
+        try:
+            anticipo = float(self.var_anticipo.get() or "0")
+        except ValueError:
+            anticipo = 0.0
+        saldo = totales["total"] - anticipo
+        self.lbl_saldo.configure(text=formatear_moneda(saldo))
+
+    def ver_indice_notas(self):
+        """Abre el índice de notas en el navegador."""
+        from core.panel_notas import regenerar_index_notas
+        from config import CARPETA_NOTAS
+        import webbrowser
+        try:
+            regenerar_index_notas()
+            ruta = CARPETA_NOTAS / "index_notas.html"
+            if ruta.exists():
+                webbrowser.open(ruta.as_uri())
+            else:
+                messagebox.showerror("Error", "No se pudo generar el índice de notas.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo generar el índice:\n\n{e}")
+
+    # ========================================================
+    # NOTIFICACIONES: PROGRAMAR CITAS EXISTENTES
+    # ========================================================
+    def programar_notificaciones_citas_existentes(self):
+        """
+        Lee todas las cotizaciones con fecha pautada futura (dentro de 3 días)
+        y programa notificaciones para ellas.
+        """
+        from datetime import datetime, timedelta
+        from core.notificaciones import enviar_notificacion_programada
+        from core.datos import leer_registros
+
+        registros = leer_registros()
+        if not registros:
+            messagebox.showinfo("Sin cotizaciones", "No hay cotizaciones registradas.")
+            return
+
+        ahora = datetime.now()
+        limite = ahora + timedelta(days=3)
+
+        # Filtrar citas futuras dentro de los próximos 3 días
+        citas_programables = []
+        citas_lejanas = []
+
+        for reg in registros:
+            fecha_pautada = reg[8].strip() if len(reg) > 8 else ""
+            if not fecha_pautada:
+                continue
+
+            try:
+                fecha_dt = datetime.strptime(fecha_pautada, "%d/%m/%Y")
+            except ValueError:
+                continue
+
+            # Si ya pasó, ignorar
+            if fecha_dt.date() < ahora.date():
+                continue
+
+            # Calcular la hora del recordatorio (1 hora antes o 8:00 AM)
+            hora_pautada = reg[9].strip() if len(reg) > 9 else ""
+            if hora_pautada:
+                try:
+                    hora_dt = datetime.strptime(hora_pautada, "%H:%M")
+                    fecha_recordatorio = fecha_dt.replace(
+                        hour=hora_dt.hour, minute=hora_dt.minute, second=0
+                    ) - timedelta(hours=1)
+                except ValueError:
+                    fecha_recordatorio = fecha_dt.replace(hour=8, minute=0, second=0)
+            else:
+                fecha_recordatorio = fecha_dt.replace(hour=8, minute=0, second=0)
+
+            # Verificar si ya pasó la hora del recordatorio
+            if fecha_recordatorio <= ahora:
+                continue
+
+            cliente = reg[2] if len(reg) > 2 else ""
+            concepto = reg[5] if len(reg) > 5 else ""
+
+            cita = {
+                "cliente": cliente,
+                "concepto": concepto,
+                "fecha_pautada": fecha_pautada,
+                "hora_pautada": hora_pautada,
+                "fecha_recordatorio": fecha_recordatorio,
+            }
+
+            if fecha_recordatorio <= limite:
+                citas_programables.append(cita)
+            else:
+                citas_lejanas.append(cita)
+
+        # Resumen
+        total = len(citas_programables) + len(citas_lejanas)
+        if total == 0:
+            messagebox.showinfo("Sin citas futuras",
+                                "No hay citas pendientes con fecha futura.")
+            return
+
+        mensaje = f"📅 Citas pendientes encontradas: {total}\n\n"
+        if citas_programables:
+            mensaje += f"✅ Se pueden programar ahora: {len(citas_programables)}\n"
+            mensaje += "   (dentro de los próximos 3 días)\n\n"
+        if citas_lejanas:
+            mensaje += f"⏳ No se pueden programar aún: {len(citas_lejanas)}\n"
+            mensaje += "   (a más de 3 días, límite de ntfy)\n\n"
+        mensaje += "¿Programar notificaciones para las citas que sí se pueden?"
+
+        if not citas_programables:
+            messagebox.showwarning("No se puede programar",
+                                   mensaje + "\n\nTodas las citas son a más de 3 días.")
+            return
+
+        if not messagebox.askyesno("Programar notificaciones", mensaje):
+            return
+
+        # Enviar las notificaciones
+        exitos = 0
+        fallos = 0
+
+        for cita in citas_programables:
+            hora_texto = f" a las {cita['hora_pautada']}" if cita['hora_pautada'] else ""
+            mensaje_notif = (
+                f"⏰ Recordatorio de cita con:\n"
+                f"👤 {cita['cliente']}\n"
+                f"📦 {cita['concepto']}\n"
+                f"📅 {cita['fecha_pautada']}{hora_texto}"
+            )
+
+            ok = enviar_notificacion_programada(
+                titulo=f"⏰ Recordatorio: {cita['cliente']}",
+                mensaje=mensaje_notif,
+                fecha_hora_envio=cita["fecha_recordatorio"],
+                prioridad="high",
+                tags=["bell", "alarm_clock"]
+            )
+
+            if ok:
+                exitos += 1
+            else:
+                fallos += 1
+
+        # Resultado
+        resultado = f"✅ Notificaciones programadas: {exitos}\n"
+        if fallos > 0:
+            resultado += f"⚠️ Fallaron: {fallos}\n"
+        resultado += "\nLos recordatorios llegarán a tu celular automáticamente."
+
+        messagebox.showinfo("Listo", resultado)
+
 
 # ============================================================
-# MODAL DE EDICIÓN
+# MODAL DE EDICIÓN DE COTIZACIÓN
 # ============================================================
 class VentanaEditar(ctk.CTkToplevel):
     """Modal para editar una cotización existente."""
@@ -902,7 +1280,6 @@ class VentanaEditar(ctk.CTkToplevel):
         self.transient(parent_app.root)
         self.grab_set()
 
-        # ScrollableFrame nativo
         frame = ctk.CTkScrollableFrame(self, fg_color=COLOR_PANEL, corner_radius=0,
                                         scrollbar_button_color="#334155")
         frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
@@ -941,7 +1318,6 @@ class VentanaEditar(ctk.CTkToplevel):
         self.entries_edit["cotizacion"] = campo("Detalles de Cotización", registro[6], multiline=True, height=4)
         self.entries_edit["monto"] = campo("Monto Aproximado", registro[7])
 
-        # Visita pautada
         ctk.CTkLabel(frame, text="📅 VISITA PAUTADA (opcional)",
                      text_color=COLOR_ROSA,
                      font=("Segoe UI", 10, "bold"),
@@ -978,7 +1354,6 @@ class VentanaEditar(ctk.CTkToplevel):
         e_h.insert(0, registro[9] if len(registro) > 9 else "")
         self.entries_edit["hora_pautada"] = e_h
 
-        # Notas
         ctk.CTkLabel(frame, text="📝 NOTAS",
                      text_color=COLOR_ROSA,
                      font=("Segoe UI", 10, "bold"),
@@ -991,7 +1366,6 @@ class VentanaEditar(ctk.CTkToplevel):
                                                       registro[11] if len(registro) > 11 else "",
                                                       multiline=True, height=2)
 
-        # Botones
         frame_btns = ctk.CTkFrame(frame, fg_color=COLOR_PANEL, corner_radius=0)
         frame_btns.pack(fill=tk.X, padx=20, pady=20)
 

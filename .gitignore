@@ -26,3 +26,5 @@ backup/
 
 # Logs
 *.log
+# Notas de venta (solo locales)
+notas/
